@@ -186,8 +186,15 @@ export default function BusinessForm() {
         toast.success('Business updated! It will be reviewed again.');
       } else {
         const result = await createBusiness.mutateAsync({
-          ...data,
-          website: data.website || undefined,
+          name: data.name,
+          category_id: data.category_id,
+          description: data.description || null,
+          address: data.address,
+          city: data.city,
+          state: data.state,
+          phone: data.phone,
+          email: data.email,
+          website: data.website || null,
         });
         await uploadImages(result.id);
         toast.success('Business submitted for review!');
