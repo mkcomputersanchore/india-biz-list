@@ -5,11 +5,18 @@ interface GoogleMapProps {
   city: string;
   state: string;
   apiKey: string;
+  googleMapsUrl?: string | null;
 }
 
-export function GoogleMap({ address, city, state, apiKey }: GoogleMapProps) {
+export function GoogleMap({ address, city, state, apiKey, googleMapsUrl }: GoogleMapProps) {
   const fullAddress = `${address}, ${city}, ${state}, India`;
   const encodedAddress = encodeURIComponent(fullAddress);
+  
+  // Use custom Google Maps URL if provided, otherwise use address-based embed
+  const getDirectionsUrl = () => {
+    if (googleMapsUrl) return googleMapsUrl;
+    return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+  };
 
   return (
     <div className="bg-card rounded-xl border overflow-hidden shadow-sm">
@@ -31,7 +38,7 @@ export function GoogleMap({ address, city, state, apiKey }: GoogleMapProps) {
       </div>
       <div className="p-4 bg-muted/30">
         <a
-          href={`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`}
+          href={getDirectionsUrl()}
           target="_blank"
           rel="noopener noreferrer"
           className="text-sm text-primary hover:underline font-medium"

@@ -82,8 +82,8 @@ export function useBusiness(idOrSlug: string) {
       if (error) throw error;
       if (!data) return null;
 
-      // Fetch tags and hours separately
-      const [tagsResult, hoursResult] = await Promise.all([
+      // Fetch tags, hours, and amenities separately
+      const [tagsResult, hoursResult, amenitiesResult] = await Promise.all([
         supabase
           .from('business_tag_assignments')
           .select(`
@@ -95,13 +95,21 @@ export function useBusiness(idOrSlug: string) {
           .from('business_hours')
           .select('*')
           .eq('business_id', data.id)
-          .order('day_of_week', { ascending: true })
+          .order('day_of_week', { ascending: true }),
+        supabase
+          .from('business_amenity_assignments')
+          .select(`
+            *,
+            amenity:business_amenities(*)
+          `)
+          .eq('business_id', data.id)
       ]);
 
       return {
         ...data,
         tags: tagsResult.data || [],
-        hours: hoursResult.data || []
+        hours: hoursResult.data || [],
+        amenities: amenitiesResult.data || []
       } as Business;
     },
     enabled: !!idOrSlug,
