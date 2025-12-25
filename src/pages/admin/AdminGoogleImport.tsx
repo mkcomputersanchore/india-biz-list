@@ -22,19 +22,47 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Upload, Loader2, MapPin, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Search, Upload, Loader2, MapPin, X, Image, Clock, Star, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import CategoryManagement from '@/components/admin/CategoryManagement';
+
+interface FetchedPhoto {
+  photo_reference: string;
+  url: string;
+  is_primary: boolean;
+}
+
+interface FetchedHour {
+  day_of_week: number;
+  open_time: string | null;
+  close_time: string | null;
+  is_closed: boolean;
+}
 
 interface FetchedBusiness {
   name: string;
   address: string;
   city: string;
   state: string;
+  pincode: string | null;
   phone: string;
   website: string | null;
+  google_maps_url: string | null;
   place_id: string;
+  description: string | null;
+  price_range: string | null;
+  rating: number | null;
+  rating_count: number | null;
+  business_status: string | null;
+  logo_url: string | null;
+  photos: FetchedPhoto[];
+  hours: FetchedHour[] | null;
+  weekday_text: string[] | null;
   selected?: boolean;
+  exists?: boolean;
+  existingId?: string;
 }
 
 export default function AdminGoogleImport() {
@@ -47,6 +75,7 @@ export default function AdminGoogleImport() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [fetchedBusinesses, setFetchedBusinesses] = useState<FetchedBusiness[]>([]);
   const [selectAll, setSelectAll] = useState(true);
+  const [replaceExisting, setReplaceExisting] = useState(true);
 
   // Step 1: Fetch businesses from Google Maps using custom search term
   const handleFetch = async () => {
@@ -73,14 +102,36 @@ export default function AdminGoogleImport() {
         throw new Error(response.error.message || 'Failed to fetch businesses');
       }
 
-      const businesses = (response.data.businesses as FetchedBusiness[]).map(b => ({
-        ...b,
-        selected: true,
-      }));
+      const businesses = response.data.businesses as FetchedBusiness[];
+      
+      // Check which businesses already exist
+      const businessesWithStatus = await Promise.all(
+        businesses.map(async (b) => {
+          const { data: existing } = await supabase
+            .from('businesses')
+            .select('id')
+            .eq('name', b.name)
+            .eq('city', b.city)
+            .maybeSingle();
 
-      setFetchedBusinesses(businesses);
+          return {
+            ...b,
+            selected: true,
+            exists: !!existing,
+            existingId: existing?.id || undefined,
+          };
+        })
+      );
+
+      setFetchedBusinesses(businessesWithStatus);
       setSelectAll(true);
-      toast.success(`Found ${businesses.length} businesses from Google Maps`);
+      
+      const existingCount = businessesWithStatus.filter(b => b.exists).length;
+      const newCount = businessesWithStatus.length - existingCount;
+      
+      toast.success(
+        `Found ${businessesWithStatus.length} businesses (${newCount} new, ${existingCount} existing)`
+      );
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch businesses';
       toast.error(errorMessage);
@@ -110,52 +161,122 @@ export default function AdminGoogleImport() {
       if (!user) throw new Error('Not authenticated');
 
       let successCount = 0;
-      let duplicateCount = 0;
+      let updateCount = 0;
+      let skippedCount = 0;
 
       for (const business of selectedBusinesses) {
         try {
-          // Check if already exists
-          const { data: existing } = await supabase
-            .from('businesses')
-            .select('id')
-            .eq('name', business.name)
-            .eq('city', business.city)
-            .maybeSingle();
+          const businessData = {
+            name: business.name,
+            address: business.address,
+            city: business.city,
+            state: business.state,
+            pincode: business.pincode,
+            phone: business.phone || 'N/A',
+            email: 'contact@example.com',
+            website: business.website,
+            google_maps_url: business.google_maps_url,
+            category_id: categoryId,
+            owner_id: user.id,
+            status: 'approved' as const,
+            description: business.description,
+            short_description: business.description?.substring(0, 200) || null,
+            price_range: business.price_range,
+            logo_url: business.logo_url,
+          };
 
-          if (existing) {
-            duplicateCount++;
+          if (business.exists && business.existingId) {
+            if (replaceExisting) {
+              // Update existing business
+              const { error: updateError } = await supabase
+                .from('businesses')
+                .update(businessData)
+                .eq('id', business.existingId);
+
+              if (updateError) {
+                console.error('Update error:', updateError);
+                continue;
+              }
+
+              // Delete old images and hours
+              await supabase.from('business_images').delete().eq('business_id', business.existingId);
+              await supabase.from('business_hours').delete().eq('business_id', business.existingId);
+
+              // Add new images
+              if (business.photos && business.photos.length > 0) {
+                const imageInserts = business.photos.map(photo => ({
+                  business_id: business.existingId!,
+                  image_url: photo.url,
+                  is_primary: photo.is_primary,
+                }));
+                await supabase.from('business_images').insert(imageInserts);
+              }
+
+              // Add new hours
+              if (business.hours && business.hours.length > 0) {
+                const hoursInserts = business.hours.map(h => ({
+                  business_id: business.existingId!,
+                  day_of_week: h.day_of_week,
+                  open_time: h.open_time,
+                  close_time: h.close_time,
+                  is_closed: h.is_closed,
+                }));
+                await supabase.from('business_hours').insert(hoursInserts);
+              }
+
+              updateCount++;
+            } else {
+              skippedCount++;
+            }
             continue;
           }
 
-          const { error } = await supabase
+          // Insert new business
+          const { data: inserted, error } = await supabase
             .from('businesses')
-            .insert({
-              name: business.name,
-              address: business.address,
-              city: business.city,
-              state: business.state,
-              phone: business.phone || 'N/A',
-              email: 'contact@example.com',
-              website: business.website,
-              category_id: categoryId,
-              owner_id: user.id,
-              status: 'approved',
-            });
+            .insert(businessData)
+            .select('id')
+            .single();
 
           if (error) {
             console.error('Insert error:', error);
-          } else {
-            successCount++;
+            continue;
           }
+
+          // Add images
+          if (inserted && business.photos && business.photos.length > 0) {
+            const imageInserts = business.photos.map(photo => ({
+              business_id: inserted.id,
+              image_url: photo.url,
+              is_primary: photo.is_primary,
+            }));
+            await supabase.from('business_images').insert(imageInserts);
+          }
+
+          // Add business hours
+          if (inserted && business.hours && business.hours.length > 0) {
+            const hoursInserts = business.hours.map(h => ({
+              business_id: inserted.id,
+              day_of_week: h.day_of_week,
+              open_time: h.open_time,
+              close_time: h.close_time,
+              is_closed: h.is_closed,
+            }));
+            await supabase.from('business_hours').insert(hoursInserts);
+          }
+
+          successCount++;
         } catch (err) {
-          console.error('Error inserting business:', err);
+          console.error('Error processing business:', err);
         }
       }
 
-      toast.success(
-        `Published ${successCount} businesses` + 
-        (duplicateCount > 0 ? `, ${duplicateCount} duplicates skipped` : '')
-      );
+      const messages: string[] = [];
+      if (successCount > 0) messages.push(`${successCount} new`);
+      if (updateCount > 0) messages.push(`${updateCount} updated`);
+      if (skippedCount > 0) messages.push(`${skippedCount} skipped`);
+      
+      toast.success(`Published: ${messages.join(', ')}`);
       
       // Clear the list after publishing
       setFetchedBusinesses([]);
@@ -190,13 +311,15 @@ export default function AdminGoogleImport() {
   };
 
   const selectedCount = fetchedBusinesses.filter(b => b.selected).length;
+  const existingCount = fetchedBusinesses.filter(b => b.exists).length;
+  const newCount = fetchedBusinesses.length - existingCount;
 
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Google Places Import</h1>
         <p className="text-muted-foreground">
-          Fetch businesses from Google Maps, review and publish them
+          Fetch businesses from Google Maps with full details (hours, photos, description)
         </p>
       </div>
 
@@ -215,7 +338,7 @@ export default function AdminGoogleImport() {
                 Step 1: Fetch from Google Maps
               </CardTitle>
               <CardDescription>
-                Enter a custom search term (e.g., "restaurants", "hotels", "gyms") and city to fetch businesses
+                Enter a custom search term (e.g., "restaurants", "hotels", "gyms") and city to fetch businesses with full details
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -281,8 +404,10 @@ export default function AdminGoogleImport() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>Step 2: Select Category & Publish</CardTitle>
-                      <CardDescription>
-                        {selectedCount} of {fetchedBusinesses.length} businesses selected
+                      <CardDescription className="flex items-center gap-2 mt-1">
+                        {selectedCount} of {fetchedBusinesses.length} selected
+                        <Badge variant="secondary">{newCount} new</Badge>
+                        <Badge variant="outline">{existingCount} existing</Badge>
                       </CardDescription>
                     </div>
                     <Button variant="outline" size="sm" onClick={clearResults}>
@@ -291,42 +416,57 @@ export default function AdminGoogleImport() {
                     </Button>
                   </div>
                   
-                  {/* Category Selection & Publish */}
-                  <div className="flex flex-col sm:flex-row gap-4 p-4 bg-muted/50 rounded-lg">
-                    <div className="flex-1 space-y-2">
-                      <Label>Assign Category *</Label>
-                      <Select value={categoryId} onValueChange={setCategoryId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select category for these businesses" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories?.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.id}>
-                              {cat.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  {/* Category Selection & Options */}
+                  <div className="flex flex-col gap-4 p-4 bg-muted/50 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Assign Category *</Label>
+                        <Select value={categoryId} onValueChange={setCategoryId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category for these businesses" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories?.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.id}>
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 border rounded-lg bg-background">
+                        <div className="flex items-center gap-2">
+                          <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">Replace Existing</p>
+                            <p className="text-xs text-muted-foreground">Update data for existing businesses</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={replaceExisting}
+                          onCheckedChange={setReplaceExisting}
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-end">
-                      <Button 
-                        onClick={handlePublish} 
-                        disabled={isPublishing || selectedCount === 0 || !categoryId}
-                        className="w-full sm:w-auto"
-                      >
-                        {isPublishing ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <Upload className="h-4 w-4 mr-2" />
-                        )}
-                        Publish Selected ({selectedCount})
-                      </Button>
-                    </div>
+                    
+                    <Button 
+                      onClick={handlePublish} 
+                      disabled={isPublishing || selectedCount === 0 || !categoryId}
+                      className="w-full md:w-auto"
+                    >
+                      {isPublishing ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4 mr-2" />
+                      )}
+                      Publish Selected ({selectedCount})
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-lg border overflow-auto max-h-[400px]">
+                <div className="rounded-lg border overflow-auto max-h-[500px]">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -336,25 +476,92 @@ export default function AdminGoogleImport() {
                             onCheckedChange={toggleSelectAll}
                           />
                         </TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Address</TableHead>
-                        <TableHead>City</TableHead>
-                        <TableHead>Phone</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Business</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Details</TableHead>
+                        <TableHead>Media</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {fetchedBusinesses.map((business, index) => (
-                        <TableRow key={index}>
+                        <TableRow key={index} className={business.exists ? 'bg-yellow-50/50' : ''}>
                           <TableCell>
                             <Checkbox
                               checked={business.selected}
                               onCheckedChange={() => toggleBusiness(index)}
                             />
                           </TableCell>
-                          <TableCell className="font-medium">{business.name}</TableCell>
-                          <TableCell className="max-w-xs truncate">{business.address}</TableCell>
-                          <TableCell>{business.city}</TableCell>
-                          <TableCell>{business.phone || 'N/A'}</TableCell>
+                          <TableCell>
+                            {business.exists ? (
+                              <Badge variant="outline" className="text-yellow-600 border-yellow-300">
+                                Exists
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-green-600">
+                                New
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-start gap-3">
+                              {business.logo_url ? (
+                                <img 
+                                  src={business.logo_url} 
+                                  alt={business.name}
+                                  className="w-10 h-10 rounded object-cover"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div>
+                                <p className="font-medium">{business.name}</p>
+                                <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                                  {business.phone || 'No phone'}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <p className="text-sm">{business.city}, {business.state}</p>
+                            {business.pincode && (
+                              <p className="text-xs text-muted-foreground">{business.pincode}</p>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {business.rating && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Star className="h-3 w-3 mr-1 text-yellow-500" />
+                                  {business.rating}
+                                </Badge>
+                              )}
+                              {business.price_range && (
+                                <Badge variant="outline" className="text-xs">
+                                  {business.price_range}
+                                </Badge>
+                              )}
+                              {business.hours && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  Hours
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-xs">
+                                <Image className="h-3 w-3 mr-1" />
+                                {business.photos?.length || 0}
+                              </Badge>
+                              {business.description && (
+                                <Badge variant="outline" className="text-xs">Desc</Badge>
+                              )}
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
