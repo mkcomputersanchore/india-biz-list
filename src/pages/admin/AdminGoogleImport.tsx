@@ -21,8 +21,10 @@ import {
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Upload, Loader2, MapPin, Check } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Upload, Loader2, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
+import CategoryManagement from '@/components/admin/CategoryManagement';
 
 interface FetchedBusiness {
   name: string;
@@ -41,14 +43,13 @@ export default function AdminGoogleImport() {
   const [city, setCity] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [maxResults, setMaxResults] = useState('60');
-  const [isLoading, setIsLoading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [fetchedBusinesses, setFetchedBusinesses] = useState<FetchedBusiness[]>([]);
   const [selectAll, setSelectAll] = useState(true);
 
-  const handleFetch = async () => {
+  const handleImport = async () => {
     if (!city || !categoryId) {
-      toast.error('Please enter city and select category');
+      toast.error('Please select category and enter city');
       return;
     }
 
@@ -58,10 +59,11 @@ export default function AdminGoogleImport() {
       return;
     }
 
-    setIsLoading(true);
+    setIsImporting(true);
+    setFetchedBusinesses([]);
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      // Fetch from Google Places
       const response = await supabase.functions.invoke('fetch-google-places', {
         body: {
           city,
@@ -75,51 +77,20 @@ export default function AdminGoogleImport() {
         throw new Error(response.error.message || 'Failed to fetch businesses');
       }
 
-      const businesses = response.data.businesses.map((b: FetchedBusiness) => ({
-        ...b,
-        selected: true,
-      }));
+      const businesses = response.data.businesses as FetchedBusiness[];
+      toast.success(`Found ${businesses.length} businesses from Google`);
 
-      setFetchedBusinesses(businesses);
-      toast.success(`Found ${businesses.length} businesses`);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch businesses';
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const toggleBusiness = (index: number) => {
-    setFetchedBusinesses(prev => 
-      prev.map((b, i) => i === index ? { ...b, selected: !b.selected } : b)
-    );
-  };
-
-  const toggleSelectAll = () => {
-    const newValue = !selectAll;
-    setSelectAll(newValue);
-    setFetchedBusinesses(prev => prev.map(b => ({ ...b, selected: newValue })));
-  };
-
-  const handleImport = async () => {
-    const selectedBusinesses = fetchedBusinesses.filter(b => b.selected);
-    if (selectedBusinesses.length === 0) {
-      toast.error('Please select at least one business');
-      return;
-    }
-
-    setIsImporting(true);
-    let successCount = 0;
-    let errorCount = 0;
-
-    try {
+      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      for (const business of selectedBusinesses) {
+      // Import all businesses
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const business of businesses) {
         try {
-          // Check if already exists (by name and city)
+          // Check if already exists
           const { data: existing } = await supabase
             .from('businesses')
             .select('id')
@@ -140,7 +111,7 @@ export default function AdminGoogleImport() {
               city: business.city,
               state: business.state,
               phone: business.phone || 'N/A',
-              email: 'contact@example.com', // Placeholder
+              email: 'contact@example.com',
               website: business.website,
               category_id: business.category_id,
               owner_id: user.id,
@@ -158,155 +129,170 @@ export default function AdminGoogleImport() {
         }
       }
 
-      toast.success(`Imported ${successCount} businesses${errorCount > 0 ? `, ${errorCount} failed/duplicates` : ''}`);
+      toast.success(`Imported ${successCount} businesses${errorCount > 0 ? `, ${errorCount} duplicates/failed` : ''}`);
       
-      // Clear list after import
-      setFetchedBusinesses([]);
+      // Show imported results
+      setFetchedBusinesses(businesses.map(b => ({ ...b, selected: true })));
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to import';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to import businesses';
       toast.error(errorMessage);
     } finally {
       setIsImporting(false);
     }
   };
 
-  const selectedCount = fetchedBusinesses.filter(b => b.selected).length;
+  const toggleBusiness = (index: number) => {
+    setFetchedBusinesses(prev => 
+      prev.map((b, i) => i === index ? { ...b, selected: !b.selected } : b)
+    );
+  };
+
+  const toggleSelectAll = () => {
+    const newValue = !selectAll;
+    setSelectAll(newValue);
+    setFetchedBusinesses(prev => prev.map(b => ({ ...b, selected: newValue })));
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Google Places Import</h1>
         <p className="text-muted-foreground">
-          Fetch and import businesses from Google Maps
+          Manage categories and import businesses from Google Maps
         </p>
       </div>
 
-      {/* Search Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Search Parameters
-          </CardTitle>
-          <CardDescription>
-            Enter city and category to fetch businesses from Google Maps
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label>City *</Label>
-              <Input
-                placeholder="e.g., Mumbai, Delhi, Surat"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Category *</Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories?.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Max Results</Label>
-              <Select value={maxResults} onValueChange={setMaxResults}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="40">40</SelectItem>
-                  <SelectItem value="60">60</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                  <SelectItem value="200">200</SelectItem>
-                  <SelectItem value="500">500</SelectItem>
-                  <SelectItem value="1000">1000</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-end">
-              <Button onClick={handleFetch} disabled={isLoading} className="w-full">
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Search className="h-4 w-4 mr-2" />
-                )}
-                Fetch from Google
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="import" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="import">Import Businesses</TabsTrigger>
+          <TabsTrigger value="categories">Manage Categories</TabsTrigger>
+        </TabsList>
 
-      {/* Results */}
-      {fetchedBusinesses.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Fetched Businesses</CardTitle>
-                <CardDescription>
-                  {selectedCount} of {fetchedBusinesses.length} selected for import
-                </CardDescription>
+        <TabsContent value="import" className="space-y-6">
+          {/* Import Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Import from Google Maps
+              </CardTitle>
+              <CardDescription>
+                Select category, enter city, and click Import to fetch and add businesses
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>Category *</Label>
+                  <Select value={categoryId} onValueChange={setCategoryId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories?.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>City *</Label>
+                  <Input
+                    placeholder="e.g., Mumbai, Delhi, Surat"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Max Results</Label>
+                  <Select value={maxResults} onValueChange={setMaxResults}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="40">40</SelectItem>
+                      <SelectItem value="60">60</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                      <SelectItem value="200">200</SelectItem>
+                      <SelectItem value="500">500</SelectItem>
+                      <SelectItem value="1000">1000</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button 
+                    onClick={handleImport} 
+                    disabled={isImporting || !city || !categoryId} 
+                    className="w-full"
+                  >
+                    {isImporting ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4 mr-2" />
+                    )}
+                    Import
+                  </Button>
+                </div>
               </div>
-              <Button onClick={handleImport} disabled={isImporting || selectedCount === 0}>
-                {isImporting ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4 mr-2" />
-                )}
-                Import Selected ({selectedCount})
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-lg border overflow-auto max-h-[500px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={selectAll}
-                        onCheckedChange={toggleSelectAll}
-                      />
-                    </TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Address</TableHead>
-                    <TableHead>City</TableHead>
-                    <TableHead>Phone</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {fetchedBusinesses.map((business, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <Checkbox
-                          checked={business.selected}
-                          onCheckedChange={() => toggleBusiness(index)}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">{business.name}</TableCell>
-                      <TableCell className="max-w-xs truncate">{business.address}</TableCell>
-                      <TableCell>{business.city}</TableCell>
-                      <TableCell>{business.phone || 'N/A'}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+
+          {/* Results */}
+          {fetchedBusinesses.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Imported Businesses</CardTitle>
+                <CardDescription>
+                  {fetchedBusinesses.length} businesses were processed
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-lg border overflow-auto max-h-[500px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={selectAll}
+                            onCheckedChange={toggleSelectAll}
+                          />
+                        </TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Address</TableHead>
+                        <TableHead>City</TableHead>
+                        <TableHead>Phone</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {fetchedBusinesses.map((business, index) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <Checkbox
+                              checked={business.selected}
+                              onCheckedChange={() => toggleBusiness(index)}
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">{business.name}</TableCell>
+                          <TableCell className="max-w-xs truncate">{business.address}</TableCell>
+                          <TableCell>{business.city}</TableCell>
+                          <TableCell>{business.phone || 'N/A'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="categories">
+          <CategoryManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
