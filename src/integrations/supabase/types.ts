@@ -58,6 +58,50 @@ export type Database = {
           },
         ]
       }
+      business_hours: {
+        Row: {
+          break_end: string | null
+          break_start: string | null
+          business_id: string
+          close_time: string | null
+          created_at: string
+          day_of_week: number
+          id: string
+          is_closed: boolean
+          open_time: string | null
+        }
+        Insert: {
+          break_end?: string | null
+          break_start?: string | null
+          business_id: string
+          close_time?: string | null
+          created_at?: string
+          day_of_week: number
+          id?: string
+          is_closed?: boolean
+          open_time?: string | null
+        }
+        Update: {
+          break_end?: string | null
+          break_start?: string | null
+          business_id?: string
+          close_time?: string | null
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          is_closed?: boolean
+          open_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_hours_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_images: {
         Row: {
           business_id: string
@@ -89,6 +133,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      business_tag_assignments: {
+        Row: {
+          business_id: string
+          created_at: string
+          custom_tag: string | null
+          id: string
+          tag_id: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          custom_tag?: string | null
+          id?: string
+          tag_id?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          custom_tag?: string | null
+          id?: string
+          tag_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_tag_assignments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_tag_assignments_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "business_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_tags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string | null
+        }
+        Relationships: []
       }
       business_transfers: {
         Row: {
