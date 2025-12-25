@@ -29,8 +29,9 @@ export default function BusinessDetail() {
           <Skeleton className="h-8 w-48 mb-8" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
-              <Skeleton className="h-64 w-full rounded-xl" />
-              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-10 w-3/4" />
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-48 w-full rounded-xl" />
               <Skeleton className="h-20 w-full" />
             </div>
             <div className="space-y-4">
@@ -72,22 +73,23 @@ export default function BusinessDetail() {
   }
 
   const primaryImage = business.images?.find(img => img.is_primary) || business.images?.[0];
+  const hasImage = !!primaryImage;
 
   return (
     <Layout>
       {/* Breadcrumb */}
       <div className="bg-muted/50 border-b">
         <div className="container-wide py-4">
-          <nav className="flex items-center gap-2 text-sm">
-            <Link to="/" className="text-muted-foreground hover:text-foreground">
+          <nav className="flex items-center gap-2 text-sm font-medium">
+            <Link to="/" className="text-muted-foreground hover:text-primary transition-colors">
               Home
             </Link>
             <span className="text-muted-foreground">/</span>
-            <Link to="/businesses" className="text-muted-foreground hover:text-foreground">
+            <Link to="/businesses" className="text-muted-foreground hover:text-primary transition-colors">
               Businesses
             </Link>
             <span className="text-muted-foreground">/</span>
-            <span className="text-foreground font-medium">{business.name}</span>
+            <span className="text-foreground">{business.name}</span>
           </nav>
         </div>
       </div>
@@ -95,10 +97,34 @@ export default function BusinessDetail() {
       <div className="container-wide py-8 md:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Hero Image */}
-            <div className="relative aspect-video rounded-2xl overflow-hidden bg-muted">
-              {primaryImage ? (
+          <div className="lg:col-span-2 space-y-6">
+            {/* Business Name & Category First */}
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                {business.name}
+              </h1>
+              {business.category && (
+                <Badge variant="secondary" className="text-sm font-medium">
+                  {business.category.name}
+                </Badge>
+              )}
+            </div>
+
+            {/* Location & Date */}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5 font-medium">
+                <MapPin className="h-4 w-4 text-primary" />
+                {business.city}, {business.state}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Clock className="h-4 w-4" />
+                Listed {format(new Date(business.created_at), 'MMM dd, yyyy')}
+              </span>
+            </div>
+
+            {/* Image - Smaller if no image */}
+            <div className={`relative rounded-xl overflow-hidden bg-muted ${hasImage ? 'aspect-video' : 'aspect-[3/1] max-w-md'}`}>
+              {hasImage ? (
                 <img
                   src={primaryImage.image_url}
                   alt={business.name}
@@ -106,49 +132,25 @@ export default function BusinessDetail() {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <Building2 className="h-24 w-24 text-muted-foreground/50" />
+                  <Building2 className="h-12 w-12 text-muted-foreground/40" />
                 </div>
               )}
             </div>
 
-            {/* Business Info */}
-            <div>
-              <div className="flex items-start justify-between gap-4 mb-4">
-                <div>
-                  <h1 className="text-3xl md:text-4xl font-bold mb-2">{business.name}</h1>
-                  {business.category && (
-                    <Badge variant="secondary" className="text-sm">
-                      {business.category.name}
-                    </Badge>
-                  )}
-                </div>
+            {/* Description */}
+            {business.description && (
+              <div>
+                <h2 className="text-lg font-semibold text-foreground mb-3">About</h2>
+                <p className="text-muted-foreground leading-relaxed font-normal">
+                  {business.description}
+                </p>
               </div>
-              
-              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6">
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  {business.city}, {business.state}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  Listed {format(new Date(business.created_at), 'MMM dd, yyyy')}
-                </span>
-              </div>
-
-              {business.description && (
-                <div className="prose prose-slate max-w-none">
-                  <h2 className="text-xl font-semibold mb-3">About</h2>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {business.description}
-                  </p>
-                </div>
-              )}
-            </div>
+            )}
 
             {/* Image Gallery */}
             {business.images && business.images.length > 1 && (
               <div>
-                <h2 className="text-xl font-semibold mb-4">Gallery</h2>
+                <h2 className="text-lg font-semibold text-foreground mb-4">Gallery</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {business.images.map((image) => (
                     <div
@@ -170,14 +172,14 @@ export default function BusinessDetail() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Contact Card */}
-            <div className="bg-card rounded-2xl border p-6 shadow-sm">
-              <h3 className="text-lg font-semibold mb-4">Contact Information</h3>
+            <div className="bg-card rounded-xl border p-5 shadow-sm">
+              <h3 className="text-base font-semibold text-foreground mb-4">Contact Information</h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-primary mt-0.5" />
+                  <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">Address</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground text-sm">Address</p>
+                    <p className="text-sm text-muted-foreground font-normal">
                       {business.address}<br />
                       {business.city}, {business.state}
                     </p>
@@ -185,12 +187,12 @@ export default function BusinessDetail() {
                 </div>
                 
                 <div className="flex items-start gap-3">
-                  <Phone className="h-5 w-5 text-primary mt-0.5" />
+                  <Phone className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">Phone</p>
+                    <p className="font-medium text-foreground text-sm">Phone</p>
                     <a 
                       href={`tel:${business.phone}`}
-                      className="text-sm text-primary hover:underline"
+                      className="text-sm text-primary hover:underline font-medium"
                     >
                       {business.phone}
                     </a>
@@ -198,12 +200,12 @@ export default function BusinessDetail() {
                 </div>
                 
                 <div className="flex items-start gap-3">
-                  <Mail className="h-5 w-5 text-primary mt-0.5" />
+                  <Mail className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">Email</p>
+                    <p className="font-medium text-foreground text-sm">Email</p>
                     <a 
                       href={`mailto:${business.email}`}
-                      className="text-sm text-primary hover:underline"
+                      className="text-sm text-primary hover:underline font-medium"
                     >
                       {business.email}
                     </a>
@@ -212,14 +214,14 @@ export default function BusinessDetail() {
                 
                 {business.website && (
                   <div className="flex items-start gap-3">
-                    <Globe className="h-5 w-5 text-primary mt-0.5" />
+                    <Globe className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="font-medium">Website</p>
+                      <p className="font-medium text-foreground text-sm">Website</p>
                       <a 
                         href={business.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline"
+                        className="text-sm text-primary hover:underline font-medium"
                       >
                         {business.website.replace(/^https?:\/\//, '')}
                       </a>
@@ -230,12 +232,12 @@ export default function BusinessDetail() {
             </div>
 
             {/* CTA Card */}
-            <div className="bg-primary/5 rounded-2xl border border-primary/20 p-6">
-              <h3 className="text-lg font-semibold mb-2">Get in Touch</h3>
-              <p className="text-sm text-muted-foreground mb-4">
+            <div className="bg-primary/5 rounded-xl border border-primary/20 p-5">
+              <h3 className="text-base font-semibold text-foreground mb-2">Get in Touch</h3>
+              <p className="text-sm text-muted-foreground mb-4 font-normal">
                 Interested in this business? Contact them directly using the information above.
               </p>
-              <Button className="w-full" asChild>
+              <Button className="w-full font-semibold" asChild>
                 <a href={`tel:${business.phone}`}>
                   <Phone className="h-4 w-4 mr-2" />
                   Call Now
@@ -245,9 +247,9 @@ export default function BusinessDetail() {
 
             {/* Claim Business Card */}
             {user && business.owner_id !== user.id && (
-              <div className="bg-muted/50 rounded-2xl border p-6">
-                <h3 className="text-lg font-semibold mb-2">Own This Business?</h3>
-                <p className="text-sm text-muted-foreground mb-4">
+              <div className="bg-muted/50 rounded-xl border p-5">
+                <h3 className="text-base font-semibold text-foreground mb-2">Own This Business?</h3>
+                <p className="text-sm text-muted-foreground mb-4 font-normal">
                   If you are the owner of this business, you can claim it to manage the listing.
                 </p>
                 <ClaimBusinessDialog 
