@@ -24,7 +24,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Search, Upload, Loader2, MapPin, X, Image, Clock, Star, RefreshCw } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Search, Upload, Loader2, MapPin, X, Image, Clock, Star, RefreshCw, Database } from 'lucide-react';
 import { toast } from 'sonner';
 import CategoryManagement from '@/components/admin/CategoryManagement';
 
@@ -76,6 +77,12 @@ export default function AdminGoogleImport() {
   const [fetchedBusinesses, setFetchedBusinesses] = useState<FetchedBusiness[]>([]);
   const [selectAll, setSelectAll] = useState(true);
   const [replaceExisting, setReplaceExisting] = useState(true);
+  
+  // Bulk rescrape state
+  const [rescrapeCategory, setRescrapeCategory] = useState('');
+  const [isRescrapingBulk, setIsRescrapingBulk] = useState(false);
+  const [rescrapeProgress, setRescrapeProgress] = useState({ current: 0, total: 0, updated: 0, failed: 0 });
+  const [rescrapeLog, setRescrapeLog] = useState<string[]>([]);
 
   // Step 1: Fetch businesses from Google Maps using custom search term
   const handleFetch = async () => {
@@ -314,6 +321,124 @@ export default function AdminGoogleImport() {
   const existingCount = fetchedBusinesses.filter(b => b.exists).length;
   const newCount = fetchedBusinesses.length - existingCount;
 
+  // Bulk rescrape handler
+  const handleBulkRescrape = async () => {
+    if (!rescrapeCategory) {
+      toast.error('Please select a category');
+      return;
+    }
+
+    setIsRescrapingBulk(true);
+    setRescrapeLog([]);
+    setRescrapeProgress({ current: 0, total: 0, updated: 0, failed: 0 });
+
+    try {
+      // Fetch all businesses in the category
+      const { data: businesses, error } = await supabase
+        .from('businesses')
+        .select('id, name, city, state')
+        .eq('category_id', rescrapeCategory)
+        .eq('status', 'approved');
+
+      if (error) throw error;
+
+      if (!businesses || businesses.length === 0) {
+        toast.error('No businesses found in this category');
+        setIsRescrapingBulk(false);
+        return;
+      }
+
+      setRescrapeProgress(prev => ({ ...prev, total: businesses.length }));
+      setRescrapeLog(prev => [...prev, `Starting rescrape of ${businesses.length} businesses...`]);
+
+      let updated = 0;
+      let failed = 0;
+
+      for (let i = 0; i < businesses.length; i++) {
+        const business = businesses[i];
+        setRescrapeProgress(prev => ({ ...prev, current: i + 1 }));
+        setRescrapeLog(prev => [...prev, `[${i + 1}/${businesses.length}] Processing: ${business.name}`]);
+
+        try {
+          // Call rescrape function
+          const response = await supabase.functions.invoke('rescrape-business', {
+            body: { businessName: business.name, city: business.city },
+          });
+
+          if (response.error || !response.data?.success) {
+            setRescrapeLog(prev => [...prev, `  ❌ Failed: ${response.data?.error || 'Unknown error'}`]);
+            failed++;
+            continue;
+          }
+
+          const freshData = response.data.business;
+
+          // Update business data
+          const updateData: Record<string, unknown> = {};
+          if (freshData.phone) updateData.phone = freshData.phone;
+          if (freshData.website) updateData.website = freshData.website;
+          if (freshData.google_maps_url) updateData.google_maps_url = freshData.google_maps_url;
+          if (freshData.description) updateData.description = freshData.description;
+          if (freshData.price_range) updateData.price_range = freshData.price_range;
+          if (freshData.logo_url) updateData.logo_url = freshData.logo_url;
+          if (freshData.pincode) updateData.pincode = freshData.pincode;
+
+          if (Object.keys(updateData).length > 0) {
+            await supabase.from('businesses').update(updateData).eq('id', business.id);
+          }
+
+          // Update images
+          if (freshData.photos && freshData.photos.length > 0) {
+            await supabase.from('business_images').delete().eq('business_id', business.id);
+            const imageInserts = freshData.photos.map((photo: { url: string; is_primary: boolean }) => ({
+              business_id: business.id,
+              image_url: photo.url,
+              is_primary: photo.is_primary,
+            }));
+            await supabase.from('business_images').insert(imageInserts);
+          }
+
+          // Update hours
+          if (freshData.hours && freshData.hours.length > 0) {
+            await supabase.from('business_hours').delete().eq('business_id', business.id);
+            const hoursInserts = freshData.hours.map((h: { day_of_week: number; open_time: string | null; close_time: string | null; is_closed: boolean }) => ({
+              business_id: business.id,
+              day_of_week: h.day_of_week,
+              open_time: h.open_time,
+              close_time: h.close_time,
+              is_closed: h.is_closed,
+            }));
+            await supabase.from('business_hours').insert(hoursInserts);
+          }
+
+          setRescrapeLog(prev => [...prev, `  ✅ Updated successfully`]);
+          updated++;
+          setRescrapeProgress(prev => ({ ...prev, updated }));
+
+        } catch (err) {
+          console.error('Rescrape error:', err);
+          setRescrapeLog(prev => [...prev, `  ❌ Error: ${err instanceof Error ? err.message : 'Unknown'}`]);
+          failed++;
+        }
+
+        setRescrapeProgress(prev => ({ ...prev, failed }));
+        
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      setRescrapeLog(prev => [...prev, `\n✨ Completed! Updated: ${updated}, Failed: ${failed}`]);
+      toast.success(`Bulk rescrape complete: ${updated} updated, ${failed} failed`);
+
+    } catch (error) {
+      console.error('Bulk rescrape error:', error);
+      toast.error('Failed to run bulk rescrape');
+      setRescrapeLog(prev => [...prev, `❌ Fatal error: ${error instanceof Error ? error.message : 'Unknown'}`]);
+    } finally {
+      setIsRescrapingBulk(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -326,6 +451,7 @@ export default function AdminGoogleImport() {
       <Tabs defaultValue="import" className="space-y-6">
         <TabsList>
           <TabsTrigger value="import">Import Businesses</TabsTrigger>
+          <TabsTrigger value="rescrape">Bulk Rescrape</TabsTrigger>
           <TabsTrigger value="categories">Manage Categories</TabsTrigger>
         </TabsList>
 
@@ -570,6 +696,83 @@ export default function AdminGoogleImport() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="rescrape" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5" />
+                Bulk Rescrape Existing Businesses
+              </CardTitle>
+              <CardDescription>
+                Update all businesses in a category with fresh data from Google Places API
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Select Category</Label>
+                  <Select value={rescrapeCategory} onValueChange={setRescrapeCategory} disabled={isRescrapingBulk}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a category to rescrape" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories?.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button 
+                    onClick={handleBulkRescrape} 
+                    disabled={isRescrapingBulk || !rescrapeCategory}
+                    className="w-full"
+                  >
+                    {isRescrapingBulk ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                    )}
+                    {isRescrapingBulk ? 'Rescraping...' : 'Start Bulk Rescrape'}
+                  </Button>
+                </div>
+              </div>
+
+              {rescrapeProgress.total > 0 && (
+                <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Progress: {rescrapeProgress.current} / {rescrapeProgress.total}</span>
+                    <div className="flex gap-3">
+                      <Badge variant="secondary" className="text-green-600">
+                        ✓ {rescrapeProgress.updated} updated
+                      </Badge>
+                      <Badge variant="outline" className="text-red-600">
+                        ✗ {rescrapeProgress.failed} failed
+                      </Badge>
+                    </div>
+                  </div>
+                  <Progress value={(rescrapeProgress.current / rescrapeProgress.total) * 100} />
+                </div>
+              )}
+
+              {rescrapeLog.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Log</Label>
+                  <div className="bg-muted rounded-lg p-3 max-h-[300px] overflow-auto font-mono text-xs">
+                    {rescrapeLog.map((log, i) => (
+                      <div key={i} className={log.includes('❌') ? 'text-red-600' : log.includes('✅') ? 'text-green-600' : ''}>
+                        {log}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="categories">
