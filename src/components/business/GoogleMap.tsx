@@ -26,7 +26,7 @@ export function GoogleMap({ address, city, state, apiKey, googleMapsUrl }: Googl
           Location
         </h3>
       </div>
-      <div className="aspect-[16/9] h-48 relative">
+      <div className="h-48 relative">
         <iframe
           src={`https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedAddress}`}
           className="w-full h-full border-0"
