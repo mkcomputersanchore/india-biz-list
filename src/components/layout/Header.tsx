@@ -41,19 +41,30 @@ export function Header() {
           </span>
         </Link>
 
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
           <Link 
             to="/businesses" 
             className="text-muted-foreground hover:text-foreground transition-colors font-medium"
           >
-            Browse Businesses
+            Businesses
           </Link>
           <Link 
             to="/categories" 
             className="text-muted-foreground hover:text-foreground transition-colors font-medium"
           >
             Categories
+          </Link>
+          <Link 
+            to="/about" 
+            className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+          >
+            About
+          </Link>
+          <Link 
+            to="/contact" 
+            className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+          >
+            Contact
           </Link>
           
           {user ? (
@@ -125,7 +136,7 @@ export function Header() {
               className="text-foreground py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Browse Businesses
+              Businesses
             </Link>
             <Link 
               to="/categories" 
@@ -133,6 +144,20 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Categories
+            </Link>
+            <Link 
+              to="/about" 
+              className="text-foreground py-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              About
+            </Link>
+            <Link 
+              to="/contact" 
+              className="text-foreground py-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Contact
             </Link>
             
             {user ? (

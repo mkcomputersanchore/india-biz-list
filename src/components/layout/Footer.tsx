@@ -46,6 +46,38 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to="/about" className="text-background/70 hover:text-background transition-colors">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="text-background/70 hover:text-background transition-colors">
+                  Contact
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div>
+            <h3 className="font-display text-lg font-semibold mb-4">Legal</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/privacy" className="text-background/70 hover:text-background transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="text-background/70 hover:text-background transition-colors">
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link to="/disclaimer" className="text-background/70 hover:text-background transition-colors">
+                  Disclaimer
+                </Link>
+              </li>
+              <li>
                 <Link to="/auth?mode=signup" className="text-background/70 hover:text-background transition-colors">
                   List Your Business
                 </Link>
