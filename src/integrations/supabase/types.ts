@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      business_amenities: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          slug: string | null
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          slug?: string | null
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          slug?: string | null
+        }
+        Relationships: []
+      }
+      business_amenity_assignments: {
+        Row: {
+          amenity_id: string
+          business_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          amenity_id: string
+          business_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          amenity_id?: string
+          business_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_amenity_assignments_amenity_id_fkey"
+            columns: ["amenity_id"]
+            isOneToOne: false
+            referencedRelation: "business_amenities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_amenity_assignments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_claims: {
         Row: {
           admin_notes: string | null
@@ -241,57 +301,102 @@ export type Database = {
       businesses: {
         Row: {
           address: string
+          alternate_email: string | null
+          alternate_phone: string | null
+          business_type: string | null
           category_id: string
           city: string
           created_at: string
           description: string | null
           email: string
+          facebook_url: string | null
+          google_maps_url: string | null
           id: string
+          instagram_url: string | null
+          linkedin_url: string | null
           name: string
           owner_id: string
           phone: string
+          pincode: string | null
+          price_range: string | null
           rejection_reason: string | null
+          short_description: string | null
           slug: string | null
           state: string
           status: Database["public"]["Enums"]["business_status"]
+          telegram: string | null
+          twitter_url: string | null
           updated_at: string
           website: string | null
+          whatsapp: string | null
+          year_established: number | null
+          youtube_url: string | null
         }
         Insert: {
           address: string
+          alternate_email?: string | null
+          alternate_phone?: string | null
+          business_type?: string | null
           category_id: string
           city: string
           created_at?: string
           description?: string | null
           email: string
+          facebook_url?: string | null
+          google_maps_url?: string | null
           id?: string
+          instagram_url?: string | null
+          linkedin_url?: string | null
           name: string
           owner_id: string
           phone: string
+          pincode?: string | null
+          price_range?: string | null
           rejection_reason?: string | null
+          short_description?: string | null
           slug?: string | null
           state: string
           status?: Database["public"]["Enums"]["business_status"]
+          telegram?: string | null
+          twitter_url?: string | null
           updated_at?: string
           website?: string | null
+          whatsapp?: string | null
+          year_established?: number | null
+          youtube_url?: string | null
         }
         Update: {
           address?: string
+          alternate_email?: string | null
+          alternate_phone?: string | null
+          business_type?: string | null
           category_id?: string
           city?: string
           created_at?: string
           description?: string | null
           email?: string
+          facebook_url?: string | null
+          google_maps_url?: string | null
           id?: string
+          instagram_url?: string | null
+          linkedin_url?: string | null
           name?: string
           owner_id?: string
           phone?: string
+          pincode?: string | null
+          price_range?: string | null
           rejection_reason?: string | null
+          short_description?: string | null
           slug?: string | null
           state?: string
           status?: Database["public"]["Enums"]["business_status"]
+          telegram?: string | null
+          twitter_url?: string | null
           updated_at?: string
           website?: string | null
+          whatsapp?: string | null
+          year_established?: number | null
+          youtube_url?: string | null
         }
         Relationships: [
           {
