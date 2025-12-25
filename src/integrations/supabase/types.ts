@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      business_claims: {
+        Row: {
+          admin_notes: string | null
+          business_id: string
+          claimant_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          proof_document: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          business_id: string
+          claimant_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          proof_document?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          business_id?: string
+          claimant_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          proof_document?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_claims_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_images: {
         Row: {
           business_id: string
@@ -39,6 +83,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "business_images_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_transfers: {
+        Row: {
+          business_id: string
+          created_at: string
+          from_user_id: string
+          id: string
+          message: string | null
+          status: string
+          to_user_email: string
+          to_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          from_user_id: string
+          id?: string
+          message?: string | null
+          status?: string
+          to_user_email: string
+          to_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          message?: string | null
+          status?: string
+          to_user_email?: string
+          to_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_transfers_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
