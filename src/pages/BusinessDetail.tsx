@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useBusiness } from '@/hooks/useBusinesses';
 import { useAuth } from '@/contexts/AuthContext';
+import { ClaimBusinessDialog } from '@/components/business/ClaimBusinessDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -241,6 +242,20 @@ export default function BusinessDetail() {
                 </a>
               </Button>
             </div>
+
+            {/* Claim Business Card */}
+            {user && business.owner_id !== user.id && (
+              <div className="bg-muted/50 rounded-2xl border p-6">
+                <h3 className="text-lg font-semibold mb-2">Own This Business?</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  If you are the owner of this business, you can claim it to manage the listing.
+                </p>
+                <ClaimBusinessDialog 
+                  businessId={business.id} 
+                  businessName={business.name} 
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

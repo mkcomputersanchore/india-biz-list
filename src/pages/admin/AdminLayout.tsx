@@ -8,7 +8,9 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  X
+  X,
+  Flag,
+  MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -17,7 +19,9 @@ import { useState } from 'react';
 const navItems = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { path: '/admin/businesses', label: 'Businesses', icon: Building2 },
+  { path: '/admin/claims', label: 'Claims', icon: Flag },
   { path: '/admin/users', label: 'Users', icon: Users },
+  { path: '/admin/google-import', label: 'Google Import', icon: MapPin },
   { path: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 

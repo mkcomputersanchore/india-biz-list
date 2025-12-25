@@ -73,3 +73,35 @@ export interface BusinessImage {
   is_primary: boolean;
   created_at: string;
 }
+
+export type ClaimStatus = 'pending' | 'approved' | 'rejected';
+export type TransferStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled';
+
+export interface BusinessClaim {
+  id: string;
+  business_id: string;
+  claimant_id: string;
+  status: ClaimStatus;
+  proof_document: string | null;
+  notes: string | null;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  business?: Business;
+  claimant?: Profile;
+}
+
+export interface BusinessTransfer {
+  id: string;
+  business_id: string;
+  from_user_id: string;
+  to_user_email: string;
+  to_user_id: string | null;
+  status: TransferStatus;
+  message: string | null;
+  created_at: string;
+  updated_at: string;
+  business?: Business;
+  from_user?: Profile;
+  to_user?: Profile;
+}
