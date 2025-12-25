@@ -74,6 +74,25 @@ export interface BusinessHour {
   created_at: string;
 }
 
+export interface BusinessAmenity {
+  id: string;
+  name: string;
+  icon: string | null;
+  slug: string | null;
+  created_at: string;
+}
+
+export interface BusinessAmenityAssignment {
+  id: string;
+  business_id: string;
+  amenity_id: string;
+  created_at: string;
+  amenity?: BusinessAmenity;
+}
+
+export type BusinessType = 'local_business' | 'franchise' | 'online_store' | 'service_business';
+export type PriceRange = 'budget' | 'moderate' | 'expensive' | 'luxury';
+
 export interface Business {
   id: string;
   owner_id: string;
@@ -81,12 +100,27 @@ export interface Business {
   slug: string;
   category_id: string;
   description: string | null;
+  short_description: string | null;
   address: string;
   city: string;
   state: string;
+  pincode: string | null;
+  google_maps_url: string | null;
   phone: string;
   email: string;
   website: string | null;
+  whatsapp: string | null;
+  telegram: string | null;
+  alternate_phone: string | null;
+  alternate_email: string | null;
+  facebook_url: string | null;
+  instagram_url: string | null;
+  twitter_url: string | null;
+  youtube_url: string | null;
+  linkedin_url: string | null;
+  business_type: BusinessType | null;
+  price_range: PriceRange | null;
+  year_established: number | null;
   status: BusinessStatus;
   rejection_reason: string | null;
   created_at: string;
@@ -95,6 +129,7 @@ export interface Business {
   images?: BusinessImage[];
   tags?: BusinessTagAssignment[];
   hours?: BusinessHour[];
+  amenities?: BusinessAmenityAssignment[];
 }
 
 export interface BusinessImage {
