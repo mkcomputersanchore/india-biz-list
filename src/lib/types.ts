@@ -49,6 +49,7 @@ export interface Business {
   id: string;
   owner_id: string;
   name: string;
+  slug: string;
   category_id: string;
   description: string | null;
   address: string;

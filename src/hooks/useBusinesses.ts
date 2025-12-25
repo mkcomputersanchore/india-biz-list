@@ -50,10 +50,13 @@ export function useApprovedBusinesses(filters?: Omit<BusinessFilters, 'status'>)
   return useBusinesses({ ...filters, status: 'approved' });
 }
 
-export function useBusiness(id: string) {
+export function useBusiness(idOrSlug: string) {
   return useQuery({
-    queryKey: ['business', id],
+    queryKey: ['business', idOrSlug],
     queryFn: async () => {
+      // Try to find by slug first, then by id
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+      
       const { data, error } = await supabase
         .from('businesses')
         .select(`
@@ -61,13 +64,13 @@ export function useBusiness(id: string) {
           category:categories(*),
           images:business_images(*)
         `)
-        .eq('id', id)
+        .eq(isUuid ? 'id' : 'slug', idOrSlug)
         .maybeSingle();
 
       if (error) throw error;
       return data as Business | null;
     },
-    enabled: !!id,
+    enabled: !!idOrSlug,
   });
 }
 
@@ -100,14 +103,15 @@ export function useCreateBusiness() {
   return useMutation({
     mutationFn: async (business: {
       name: string;
+      slug?: string;
       category_id: string;
-      description?: string;
+      description?: string | null;
       address: string;
       city: string;
       state: string;
       phone: string;
       email: string;
-      website?: string;
+      website?: string | null;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');

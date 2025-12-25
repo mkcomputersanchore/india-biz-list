@@ -32,6 +32,10 @@ import { toast } from 'sonner';
 
 const businessSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
+  slug: z.string()
+    .regex(/^[a-z0-9-]*$/, 'Slug can only contain lowercase letters, numbers, and hyphens')
+    .optional()
+    .or(z.literal('')),
   category_id: z.string().min(1, 'Please select a category'),
   description: z.string().optional(),
   address: z.string().min(5, 'Please enter a valid address'),
@@ -63,6 +67,7 @@ export default function BusinessForm() {
     resolver: zodResolver(businessSchema),
     defaultValues: {
       name: '',
+      slug: '',
       category_id: '',
       description: '',
       address: '',
@@ -78,6 +83,7 @@ export default function BusinessForm() {
     if (existingBusiness) {
       form.reset({
         name: existingBusiness.name,
+        slug: existingBusiness.slug || '',
         category_id: existingBusiness.category_id,
         description: existingBusiness.description || '',
         address: existingBusiness.address,
@@ -172,6 +178,7 @@ export default function BusinessForm() {
         await updateBusiness.mutateAsync({
           id,
           name: data.name,
+          slug: data.slug || undefined,
           category_id: data.category_id,
           description: data.description || null,
           address: data.address,
@@ -187,6 +194,7 @@ export default function BusinessForm() {
       } else {
         const result = await createBusiness.mutateAsync({
           name: data.name,
+          slug: data.slug || undefined,
           category_id: data.category_id,
           description: data.description || null,
           address: data.address,
@@ -248,6 +256,30 @@ export default function BusinessForm() {
                       <FormControl>
                         <Input placeholder="Enter business name" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Custom URL Slug (Optional)</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground whitespace-nowrap">/business/</span>
+                          <Input 
+                            placeholder="my-business-name" 
+                            {...field} 
+                            onChange={(e) => field.onChange(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                          />
+                        </div>
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground">
+                        Leave empty to auto-generate from business name. Use lowercase letters, numbers, and hyphens only.
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}
