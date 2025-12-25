@@ -9,8 +9,14 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Businesses from "./pages/Businesses";
 import BusinessDetail from "./pages/BusinessDetail";
+import Categories from "./pages/Categories";
 import Dashboard from "./pages/Dashboard";
 import BusinessForm from "./pages/BusinessForm";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Disclaimer from "./pages/Disclaimer";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminBusinesses from "./pages/admin/AdminBusinesses";
@@ -33,6 +39,12 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/businesses" element={<Businesses />} />
               <Route path="/business/:slug" element={<BusinessDetail />} />
+              <Route path="/categories" element={<Categories />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/disclaimer" element={<Disclaimer />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/dashboard/add" element={<BusinessForm />} />
               <Route path="/dashboard/edit/:id" element={<BusinessForm />} />
