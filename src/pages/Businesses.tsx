@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { SearchBar } from '@/components/business/SearchBar';
 import { BusinessCard } from '@/components/business/BusinessCard';
@@ -8,19 +8,19 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Building2 } from 'lucide-react';
 
 export default function Businesses() {
+  const { categorySlug } = useParams<{ categorySlug: string }>();
   const [searchParams] = useSearchParams();
   const search = searchParams.get('search') || '';
-  const category = searchParams.get('category') || '';
   const city = searchParams.get('city') || '';
+
+  const { data: categories } = useCategories();
+  const selectedCategory = categories?.find(c => c.slug === categorySlug);
 
   const { data: businesses, isLoading } = useApprovedBusinesses({
     search: search || undefined,
-    category: category || undefined,
+    categorySlug: categorySlug || undefined,
     city: city || undefined,
   });
-
-  const { data: categories } = useCategories();
-  const selectedCategory = categories?.find(c => c.id === category);
 
   return (
     <Layout>
@@ -32,7 +32,7 @@ export default function Businesses() {
           </h1>
           <SearchBar 
             initialSearch={search} 
-            initialCategory={category} 
+            initialCategory={categorySlug || ''} 
             initialCity={city} 
           />
         </div>

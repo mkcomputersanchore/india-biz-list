@@ -12,7 +12,7 @@ export function BusinessCard({ business }: BusinessCardProps) {
   const primaryImage = business.images?.find(img => img.is_primary) || business.images?.[0];
 
   return (
-    <Link to={`/business/${business.slug || business.id}`}>
+    <Link to={`/business/${business.slug || business.id}/`}>
       <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full">
         <div className="aspect-video relative overflow-hidden bg-muted">
           {primaryImage ? (

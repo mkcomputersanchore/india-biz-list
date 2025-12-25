@@ -37,7 +37,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
   const IconComponent = category.icon ? iconMap[category.icon] || Folder : Folder;
 
   return (
-    <Link to={`/businesses?category=${category.id}`}>
+    <Link to={`/businesses/${category.slug}/`}>
       <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-primary/30">
         <CardContent className="p-6 text-center">
           <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
