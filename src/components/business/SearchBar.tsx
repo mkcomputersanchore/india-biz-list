@@ -103,12 +103,12 @@ export function SearchBar({
           className="pl-9"
         />
       </div>
-      <Select value={category} onValueChange={setCategory}>
+      <Select value={category || "all"} onValueChange={(val) => setCategory(val === "all" ? "" : val)}>
         <SelectTrigger className="w-full sm:w-48">
           <SelectValue placeholder="Category" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Categories</SelectItem>
+          <SelectItem value="all">All Categories</SelectItem>
           {categories?.map((cat) => (
             <SelectItem key={cat.id} value={cat.id}>
               {cat.name}
