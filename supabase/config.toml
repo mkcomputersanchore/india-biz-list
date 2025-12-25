@@ -2,3 +2,9 @@ project_id = "dovwynkusvmwjfykkmmw"
 
 [functions.fetch-google-places]
 verify_jwt = false
+
+[functions.rescrape-business]
+verify_jwt = false
+
+[functions.get-maps-key]
+verify_jwt = false
