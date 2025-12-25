@@ -33,7 +33,6 @@ interface FetchedBusiness {
   state: string;
   phone: string;
   website: string | null;
-  category_id: string;
   place_id: string;
   selected?: boolean;
 }
@@ -41,6 +40,7 @@ interface FetchedBusiness {
 export default function AdminGoogleImport() {
   const { data: categories } = useCategories();
   const [city, setCity] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [maxResults, setMaxResults] = useState('60');
   const [isFetching, setIsFetching] = useState(false);
@@ -48,28 +48,23 @@ export default function AdminGoogleImport() {
   const [fetchedBusinesses, setFetchedBusinesses] = useState<FetchedBusiness[]>([]);
   const [selectAll, setSelectAll] = useState(true);
 
-  // Step 1: Fetch businesses from Google Maps
+  // Step 1: Fetch businesses from Google Maps using custom search term
   const handleFetch = async () => {
-    if (!city || !categoryId) {
-      toast.error('Please select category and enter city');
-      return;
-    }
-
-    const category = categories?.find(c => c.id === categoryId);
-    if (!category) {
-      toast.error('Invalid category');
+    if (!city || !searchTerm) {
+      toast.error('Please enter search term and city');
       return;
     }
 
     setIsFetching(true);
     setFetchedBusinesses([]);
+    setCategoryId('');
 
     try {
       const response = await supabase.functions.invoke('fetch-google-places', {
         body: {
           city,
-          category: category.name,
-          categoryId,
+          category: searchTerm,
+          categoryId: 'temp',
           maxResults: parseInt(maxResults),
         },
       });
@@ -94,11 +89,17 @@ export default function AdminGoogleImport() {
     }
   };
 
-  // Step 2: Publish selected businesses
+  // Step 2: Publish selected businesses with chosen category
   const handlePublish = async () => {
     const selectedBusinesses = fetchedBusinesses.filter(b => b.selected);
+    
     if (selectedBusinesses.length === 0) {
       toast.error('Please select at least one business to publish');
+      return;
+    }
+
+    if (!categoryId) {
+      toast.error('Please select a category before publishing');
       return;
     }
 
@@ -136,7 +137,7 @@ export default function AdminGoogleImport() {
               phone: business.phone || 'N/A',
               email: 'contact@example.com',
               website: business.website,
-              category_id: business.category_id,
+              category_id: categoryId,
               owner_id: user.id,
               status: 'approved',
             });
@@ -159,6 +160,8 @@ export default function AdminGoogleImport() {
       // Clear the list after publishing
       setFetchedBusinesses([]);
       setCity('');
+      setSearchTerm('');
+      setCategoryId('');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to publish businesses';
       toast.error(errorMessage);
@@ -183,6 +186,7 @@ export default function AdminGoogleImport() {
 
   const clearResults = () => {
     setFetchedBusinesses([]);
+    setCategoryId('');
   };
 
   const selectedCount = fetchedBusinesses.filter(b => b.selected).length;
@@ -211,25 +215,19 @@ export default function AdminGoogleImport() {
                 Step 1: Fetch from Google Maps
               </CardTitle>
               <CardDescription>
-                Select category and city, then fetch businesses to review before publishing
+                Enter a custom search term (e.g., "restaurants", "hotels", "gyms") and city to fetch businesses
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="space-y-2">
-                  <Label>Category *</Label>
-                  <Select value={categoryId} onValueChange={setCategoryId} disabled={fetchedBusinesses.length > 0}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories?.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Search Term *</Label>
+                  <Input
+                    placeholder="e.g., Restaurants, Hotels, Gyms"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    disabled={fetchedBusinesses.length > 0}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>City *</Label>
@@ -260,7 +258,7 @@ export default function AdminGoogleImport() {
                 <div className="flex items-end">
                   <Button 
                     onClick={handleFetch} 
-                    disabled={isFetching || !city || !categoryId || fetchedBusinesses.length > 0} 
+                    disabled={isFetching || !city || !searchTerm || fetchedBusinesses.length > 0} 
                     className="w-full"
                   >
                     {isFetching ? (
@@ -275,38 +273,60 @@ export default function AdminGoogleImport() {
             </CardContent>
           </Card>
 
-          {/* Step 2: Review and Publish */}
+          {/* Step 2: Review, Select Category and Publish */}
           {fetchedBusinesses.length > 0 && (
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Step 2: Review & Publish</CardTitle>
-                    <CardDescription>
-                      {selectedCount} of {fetchedBusinesses.length} businesses selected
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={clearResults}>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Step 2: Select Category & Publish</CardTitle>
+                      <CardDescription>
+                        {selectedCount} of {fetchedBusinesses.length} businesses selected
+                      </CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={clearResults}>
                       <X className="h-4 w-4 mr-2" />
                       Clear
                     </Button>
-                    <Button 
-                      onClick={handlePublish} 
-                      disabled={isPublishing || selectedCount === 0}
-                    >
-                      {isPublishing ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Upload className="h-4 w-4 mr-2" />
-                      )}
-                      Publish Selected ({selectedCount})
-                    </Button>
+                  </div>
+                  
+                  {/* Category Selection & Publish */}
+                  <div className="flex flex-col sm:flex-row gap-4 p-4 bg-muted/50 rounded-lg">
+                    <div className="flex-1 space-y-2">
+                      <Label>Assign Category *</Label>
+                      <Select value={categoryId} onValueChange={setCategoryId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category for these businesses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories?.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-end">
+                      <Button 
+                        onClick={handlePublish} 
+                        disabled={isPublishing || selectedCount === 0 || !categoryId}
+                        className="w-full sm:w-auto"
+                      >
+                        {isPublishing ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Upload className="h-4 w-4 mr-2" />
+                        )}
+                        Publish Selected ({selectedCount})
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-lg border overflow-auto max-h-[500px]">
+                <div className="rounded-lg border overflow-auto max-h-[400px]">
                   <Table>
                     <TableHeader>
                       <TableRow>
