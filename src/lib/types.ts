@@ -46,6 +46,34 @@ export interface IndianState {
   code: string;
 }
 
+export interface BusinessTag {
+  id: string;
+  name: string;
+  slug: string | null;
+  created_at: string;
+}
+
+export interface BusinessTagAssignment {
+  id: string;
+  business_id: string;
+  tag_id: string | null;
+  custom_tag: string | null;
+  created_at: string;
+  tag?: BusinessTag;
+}
+
+export interface BusinessHour {
+  id: string;
+  business_id: string;
+  day_of_week: number;
+  is_closed: boolean;
+  open_time: string | null;
+  close_time: string | null;
+  break_start: string | null;
+  break_end: string | null;
+  created_at: string;
+}
+
 export interface Business {
   id: string;
   owner_id: string;
@@ -65,6 +93,8 @@ export interface Business {
   updated_at: string;
   category?: Category;
   images?: BusinessImage[];
+  tags?: BusinessTagAssignment[];
+  hours?: BusinessHour[];
 }
 
 export interface BusinessImage {

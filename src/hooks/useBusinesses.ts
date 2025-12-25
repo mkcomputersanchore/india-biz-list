@@ -80,7 +80,29 @@ export function useBusiness(idOrSlug: string) {
         .maybeSingle();
 
       if (error) throw error;
-      return data as Business | null;
+      if (!data) return null;
+
+      // Fetch tags and hours separately
+      const [tagsResult, hoursResult] = await Promise.all([
+        supabase
+          .from('business_tag_assignments')
+          .select(`
+            *,
+            tag:business_tags(*)
+          `)
+          .eq('business_id', data.id),
+        supabase
+          .from('business_hours')
+          .select('*')
+          .eq('business_id', data.id)
+          .order('day_of_week', { ascending: true })
+      ]);
+
+      return {
+        ...data,
+        tags: tagsResult.data || [],
+        hours: hoursResult.data || []
+      } as Business;
     },
     enabled: !!idOrSlug,
   });
