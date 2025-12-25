@@ -436,9 +436,9 @@ export default function BusinessDetail() {
             </div>
 
             {/* Sidebar - Right Column */}
-            <div className="space-y-6">
+            <div className="space-y-6 lg:sticky lg:top-4 lg:self-start">
               {/* Contact Information Card */}
-              <Card className="sticky top-4">
+              <Card>
                 <CardContent className="p-6">
                   <h3 className="text-lg font-semibold text-foreground mb-4">Contact Information</h3>
                   
