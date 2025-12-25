@@ -35,9 +35,10 @@ export function SearchBar({
     e.preventDefault();
     const params = new URLSearchParams();
     if (search) params.set('search', search);
-    if (category) params.set('category', category);
     if (city) params.set('city', city);
-    navigate(`/businesses?${params.toString()}`);
+    const queryString = params.toString();
+    const basePath = category ? `/businesses/${category}/` : '/businesses/';
+    navigate(queryString ? `${basePath}?${queryString}` : basePath);
   };
 
   if (variant === 'hero') {
@@ -77,8 +78,8 @@ export function SearchBar({
                 key={cat.id}
                 type="button"
                 onClick={() => {
-                  setCategory(cat.id);
-                  navigate(`/businesses?category=${cat.id}`);
+                  setCategory(cat.slug);
+                  navigate(`/businesses/${cat.slug}/`);
                 }}
                 className="text-sm text-primary hover:underline"
               >
@@ -110,7 +111,7 @@ export function SearchBar({
         <SelectContent>
           <SelectItem value="all">All Categories</SelectItem>
           {categories?.map((cat) => (
-            <SelectItem key={cat.id} value={cat.id}>
+            <SelectItem key={cat.id} value={cat.slug}>
               {cat.name}
             </SelectItem>
           ))}

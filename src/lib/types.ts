@@ -34,6 +34,7 @@ export interface UserRole {
 export interface Category {
   id: string;
   name: string;
+  slug: string;
   icon: string | null;
   description: string | null;
   created_at: string;

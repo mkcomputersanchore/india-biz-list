@@ -4,6 +4,7 @@ import type { Business, BusinessStatus } from '@/lib/types';
 
 interface BusinessFilters {
   category?: string;
+  categorySlug?: string;
   city?: string;
   search?: string;
   status?: BusinessStatus;
@@ -25,6 +26,17 @@ export function useBusinesses(filters?: BusinessFilters) {
 
       if (filters?.category) {
         query = query.eq('category_id', filters.category);
+      }
+      if (filters?.categorySlug) {
+        // First get the category ID from slug
+        const { data: cat } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('slug', filters.categorySlug)
+          .single();
+        if (cat) {
+          query = query.eq('category_id', cat.id);
+        }
       }
       if (filters?.city) {
         query = query.ilike('city', `%${filters.city}%`);
