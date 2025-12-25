@@ -11,7 +11,8 @@ import {
   X,
   Flag,
   MapPin,
-  FolderOpen
+  FolderOpen,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -21,6 +22,7 @@ const navItems = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { path: '/admin/businesses', label: 'Businesses', icon: Building2 },
   { path: '/admin/categories', label: 'Categories', icon: FolderOpen },
+  { path: '/admin/amenities', label: 'Amenities', icon: Sparkles },
   { path: '/admin/claims', label: 'Claims', icon: Flag },
   { path: '/admin/users', label: 'Users', icon: Users },
   { path: '/admin/google-import', label: 'Google Import', icon: MapPin },

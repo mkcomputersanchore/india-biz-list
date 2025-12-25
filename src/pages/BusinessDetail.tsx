@@ -8,6 +8,9 @@ import { BusinessHours } from '@/components/business/BusinessHours';
 import { BusinessTags } from '@/components/business/BusinessTags';
 import { ShareBusiness } from '@/components/business/ShareBusiness';
 import { GoogleMap } from '@/components/business/GoogleMap';
+import { BusinessAmenities } from '@/components/business/BusinessAmenities';
+import { BusinessInfo } from '@/components/business/BusinessInfo';
+import { SocialLinks } from '@/components/business/SocialLinks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +21,8 @@ import {
   Globe, 
   ArrowLeft,
   Building2,
-  Clock
+  Clock,
+  MessageCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -110,20 +114,30 @@ export default function BusinessDetail() {
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
                   {business.name}
                 </h1>
-                {business.category && (
-                  <Badge variant="secondary" className="text-sm font-medium">
-                    {business.category.name}
-                  </Badge>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  {business.category && (
+                    <Badge variant="secondary" className="text-sm font-medium">
+                      {business.category.name}
+                    </Badge>
+                  )}
+                </div>
               </div>
               <ShareBusiness businessName={business.name} businessSlug={business.slug} />
             </div>
+
+            {/* Business Info Badges */}
+            <BusinessInfo 
+              businessType={business.business_type}
+              priceRange={business.price_range}
+              yearEstablished={business.year_established}
+            />
 
             {/* Location & Date */}
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1.5 font-medium">
                 <MapPin className="h-4 w-4 text-primary" />
                 {business.city}, {business.state}
+                {business.pincode && ` - ${business.pincode}`}
               </span>
               <span className="flex items-center gap-1.5">
                 <Clock className="h-4 w-4" />
@@ -131,7 +145,14 @@ export default function BusinessDetail() {
               </span>
             </div>
 
-            {/* Image - Smaller if no image */}
+            {/* Short Description */}
+            {business.short_description && (
+              <p className="text-lg text-muted-foreground italic">
+                "{business.short_description}"
+              </p>
+            )}
+
+            {/* Image */}
             <div className={`relative rounded-xl overflow-hidden bg-muted ${hasImage ? 'aspect-video' : 'aspect-[3/1] max-w-md'}`}>
               {hasImage ? (
                 <img
@@ -150,7 +171,7 @@ export default function BusinessDetail() {
             {business.description && (
               <div className="bg-card rounded-xl border p-5 shadow-sm">
                 <h2 className="text-lg font-semibold text-foreground mb-3">About</h2>
-                <p className="text-muted-foreground leading-relaxed font-normal">
+                <p className="text-muted-foreground leading-relaxed font-normal whitespace-pre-wrap">
                   {business.description}
                 </p>
               </div>
@@ -162,6 +183,22 @@ export default function BusinessDetail() {
                 <BusinessTags tags={business.tags} />
               </div>
             )}
+
+            {/* Amenities */}
+            {business.amenities && business.amenities.length > 0 && (
+              <BusinessAmenities amenities={business.amenities} />
+            )}
+
+            {/* Social Links */}
+            <SocialLinks
+              facebookUrl={business.facebook_url}
+              instagramUrl={business.instagram_url}
+              twitterUrl={business.twitter_url}
+              youtubeUrl={business.youtube_url}
+              linkedinUrl={business.linkedin_url}
+              whatsapp={business.whatsapp}
+              telegram={business.telegram}
+            />
 
             {/* Image Gallery */}
             {business.images && business.images.length > 1 && (
@@ -191,6 +228,7 @@ export default function BusinessDetail() {
                 city={business.city}
                 state={business.state}
                 apiKey={mapsApiKey}
+                googleMapsUrl={business.google_maps_url}
               />
             )}
           </div>
@@ -213,6 +251,7 @@ export default function BusinessDetail() {
                     <p className="text-sm text-muted-foreground font-normal">
                       {business.address}<br />
                       {business.city}, {business.state}
+                      {business.pincode && ` - ${business.pincode}`}
                     </p>
                   </div>
                 </div>
@@ -227,6 +266,14 @@ export default function BusinessDetail() {
                     >
                       {business.phone}
                     </a>
+                    {business.alternate_phone && (
+                      <a 
+                        href={`tel:${business.alternate_phone}`}
+                        className="block text-sm text-muted-foreground hover:underline"
+                      >
+                        {business.alternate_phone} (Alt)
+                      </a>
+                    )}
                   </div>
                 </div>
                 
@@ -240,6 +287,14 @@ export default function BusinessDetail() {
                     >
                       {business.email}
                     </a>
+                    {business.alternate_email && (
+                      <a 
+                        href={`mailto:${business.alternate_email}`}
+                        className="block text-sm text-muted-foreground hover:underline"
+                      >
+                        {business.alternate_email} (Alt)
+                      </a>
+                    )}
                   </div>
                 </div>
                 
@@ -260,13 +315,26 @@ export default function BusinessDetail() {
                   </div>
                 )}
 
-                <div className="pt-2">
+                <div className="pt-2 space-y-2">
                   <Button className="w-full font-semibold" asChild>
                     <a href={`tel:${business.phone}`}>
                       <Phone className="h-4 w-4 mr-2" />
                       Call Now
                     </a>
                   </Button>
+                  
+                  {business.whatsapp && (
+                    <Button variant="outline" className="w-full font-semibold text-green-600 border-green-600 hover:bg-green-50" asChild>
+                      <a 
+                        href={`https://wa.me/${business.whatsapp.replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        WhatsApp
+                      </a>
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

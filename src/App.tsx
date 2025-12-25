@@ -21,6 +21,7 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminBusinesses from "./pages/admin/AdminBusinesses";
 import AdminCategories from "./pages/admin/AdminCategories";
+import AdminAmenities from "./pages/admin/AdminAmenities";
 import AdminClaims from "./pages/admin/AdminClaims";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminGoogleImport from "./pages/admin/AdminGoogleImport";
@@ -56,6 +57,7 @@ const App = () => (
                 <Route index element={<AdminDashboard />} />
                 <Route path="businesses" element={<AdminBusinesses />} />
                 <Route path="categories" element={<AdminCategories />} />
+                <Route path="amenities" element={<AdminAmenities />} />
                 <Route path="claims" element={<AdminClaims />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="google-import" element={<AdminGoogleImport />} />
