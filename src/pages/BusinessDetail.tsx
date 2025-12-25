@@ -1,8 +1,13 @@
 import { useParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useBusiness } from '@/hooks/useBusinesses';
+import { useGoogleMapsKey } from '@/hooks/useGoogleMapsKey';
 import { useAuth } from '@/contexts/AuthContext';
 import { ClaimBusinessDialog } from '@/components/business/ClaimBusinessDialog';
+import { BusinessHours } from '@/components/business/BusinessHours';
+import { BusinessTags } from '@/components/business/BusinessTags';
+import { ShareBusiness } from '@/components/business/ShareBusiness';
+import { GoogleMap } from '@/components/business/GoogleMap';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +25,7 @@ import { format } from 'date-fns';
 export default function BusinessDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: business, isLoading, error } = useBusiness(slug || '');
+  const { data: mapsApiKey } = useGoogleMapsKey();
   const { user, isAdmin } = useAuth();
 
   if (isLoading) {
@@ -98,16 +104,19 @@ export default function BusinessDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Business Name & Category First */}
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-                {business.name}
-              </h1>
-              {business.category && (
-                <Badge variant="secondary" className="text-sm font-medium">
-                  {business.category.name}
-                </Badge>
-              )}
+            {/* Business Name, Category & Share */}
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                  {business.name}
+                </h1>
+                {business.category && (
+                  <Badge variant="secondary" className="text-sm font-medium">
+                    {business.category.name}
+                  </Badge>
+                )}
+              </div>
+              <ShareBusiness businessName={business.name} businessSlug={business.slug} />
             </div>
 
             {/* Location & Date */}
@@ -137,13 +146,20 @@ export default function BusinessDetail() {
               )}
             </div>
 
-            {/* Description */}
+            {/* About / Description */}
             {business.description && (
-              <div>
+              <div className="bg-card rounded-xl border p-5 shadow-sm">
                 <h2 className="text-lg font-semibold text-foreground mb-3">About</h2>
                 <p className="text-muted-foreground leading-relaxed font-normal">
                   {business.description}
                 </p>
+              </div>
+            )}
+
+            {/* Tags */}
+            {business.tags && business.tags.length > 0 && (
+              <div className="bg-card rounded-xl border p-5 shadow-sm">
+                <BusinessTags tags={business.tags} />
               </div>
             )}
 
@@ -167,13 +183,28 @@ export default function BusinessDetail() {
                 </div>
               </div>
             )}
+
+            {/* Google Map Location */}
+            {mapsApiKey && (
+              <GoogleMap
+                address={business.address}
+                city={business.city}
+                state={business.state}
+                apiKey={mapsApiKey}
+              />
+            )}
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Contact Card */}
+            {/* Business Hours */}
+            {business.hours && business.hours.length > 0 && (
+              <BusinessHours hours={business.hours} />
+            )}
+
+            {/* Contact Card - Get in Touch */}
             <div className="bg-card rounded-xl border p-5 shadow-sm">
-              <h3 className="text-base font-semibold text-foreground mb-4">Contact Information</h3>
+              <h3 className="text-base font-semibold text-foreground mb-4">Get in Touch</h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
@@ -228,21 +259,16 @@ export default function BusinessDetail() {
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
 
-            {/* CTA Card */}
-            <div className="bg-primary/5 rounded-xl border border-primary/20 p-5">
-              <h3 className="text-base font-semibold text-foreground mb-2">Get in Touch</h3>
-              <p className="text-sm text-muted-foreground mb-4 font-normal">
-                Interested in this business? Contact them directly using the information above.
-              </p>
-              <Button className="w-full font-semibold" asChild>
-                <a href={`tel:${business.phone}`}>
-                  <Phone className="h-4 w-4 mr-2" />
-                  Call Now
-                </a>
-              </Button>
+                <div className="pt-2">
+                  <Button className="w-full font-semibold" asChild>
+                    <a href={`tel:${business.phone}`}>
+                      <Phone className="h-4 w-4 mr-2" />
+                      Call Now
+                    </a>
+                  </Button>
+                </div>
+              </div>
             </div>
 
             {/* Claim Business Card */}
