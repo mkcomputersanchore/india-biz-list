@@ -98,6 +98,7 @@ export interface Business {
   owner_id: string;
   name: string;
   slug: string;
+  logo_url: string | null;
   category_id: string;
   description: string | null;
   short_description: string | null;

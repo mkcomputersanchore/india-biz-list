@@ -314,6 +314,7 @@ export type Database = {
           id: string
           instagram_url: string | null
           linkedin_url: string | null
+          logo_url: string | null
           name: string
           owner_id: string
           phone: string
@@ -347,6 +348,7 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           linkedin_url?: string | null
+          logo_url?: string | null
           name: string
           owner_id: string
           phone: string
@@ -380,6 +382,7 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           linkedin_url?: string | null
+          logo_url?: string | null
           name?: string
           owner_id?: string
           phone?: string

@@ -137,6 +137,7 @@ export default function BusinessForm() {
   
   const [images, setImages] = useState<{ file?: File; url: string; isNew: boolean }[]>([]);
   const [imageUrl, setImageUrl] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -214,6 +215,11 @@ export default function BusinessForm() {
         price_range: existingBusiness.price_range || 'moderate',
         year_established: existingBusiness.year_established || null,
       });
+      
+      // Set logo URL
+      if (existingBusiness.logo_url) {
+        setLogoUrl(existingBusiness.logo_url);
+      }
       
       if (existingBusiness.images) {
         setImages(existingBusiness.images.map(img => ({
@@ -443,6 +449,7 @@ export default function BusinessForm() {
         business_type: (data.business_type || null) as BusinessType | null,
         price_range: (data.price_range || null) as PriceRange | null,
         year_established: data.year_established || null,
+        logo_url: logoUrl || null,
       };
 
       let businessId: string;
@@ -1148,9 +1155,45 @@ export default function BusinessForm() {
                 )}
               </div>
 
+              {/* Logo */}
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold border-b pb-2">Business Logo</h2>
+                <p className="text-sm text-muted-foreground">Add your business logo (URL only)</p>
+                
+                <div className="flex gap-4 items-start">
+                  {logoUrl && (
+                    <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-muted border-2 border-primary flex-shrink-0">
+                      <img
+                        src={logoUrl}
+                        alt="Business logo"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setLogoUrl('')}
+                        className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Paste logo URL (e.g., https://example.com/logo.png)"
+                      value={logoUrl}
+                      onChange={(e) => setLogoUrl(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Square images work best (e.g., 200x200px)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Images */}
               <div className="space-y-4">
-                <h2 className="text-lg font-semibold border-b pb-2">Images</h2>
+                <h2 className="text-lg font-semibold border-b pb-2">Business Images</h2>
+                <p className="text-sm text-muted-foreground">Add photos of your business</p>
                 
                 <div className="flex gap-2">
                   <Input
