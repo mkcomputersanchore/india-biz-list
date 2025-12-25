@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useBusiness } from '@/hooks/useBusinesses';
+import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,8 +17,9 @@ import {
 import { format } from 'date-fns';
 
 export default function BusinessDetail() {
-  const { id } = useParams<{ id: string }>();
-  const { data: business, isLoading, error } = useBusiness(id || '');
+  const { slug } = useParams<{ slug: string }>();
+  const { data: business, isLoading, error } = useBusiness(slug || '');
+  const { user, isAdmin } = useAuth();
 
   if (isLoading) {
     return (
@@ -39,7 +41,14 @@ export default function BusinessDetail() {
     );
   }
 
-  if (error || !business) {
+  // Check if user can view this business (approved, or owner, or admin)
+  const canView = business && (
+    business.status === 'approved' || 
+    business.owner_id === user?.id || 
+    isAdmin
+  );
+
+  if (error || !business || !canView) {
     return (
       <Layout>
         <div className="container-wide py-12">
@@ -47,7 +56,7 @@ export default function BusinessDetail() {
             <Building2 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-2xl font-semibold mb-2">Business not found</h2>
             <p className="text-muted-foreground mb-6">
-              The business you're looking for doesn't exist or has been removed.
+              The business you're looking for doesn't exist or is pending approval.
             </p>
             <Button asChild>
               <Link to="/businesses">

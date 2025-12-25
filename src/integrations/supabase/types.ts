@@ -59,6 +59,7 @@ export type Database = {
           owner_id: string
           phone: string
           rejection_reason: string | null
+          slug: string | null
           state: string
           status: Database["public"]["Enums"]["business_status"]
           updated_at: string
@@ -76,6 +77,7 @@ export type Database = {
           owner_id: string
           phone: string
           rejection_reason?: string | null
+          slug?: string | null
           state: string
           status?: Database["public"]["Enums"]["business_status"]
           updated_at?: string
@@ -93,6 +95,7 @@ export type Database = {
           owner_id?: string
           phone?: string
           rejection_reason?: string | null
+          slug?: string | null
           state?: string
           status?: Database["public"]["Enums"]["business_status"]
           updated_at?: string
@@ -245,6 +248,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_slug: { Args: { name: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
