@@ -22,7 +22,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Loader2, MapPin } from 'lucide-react';
+import { Search, Upload, Loader2, MapPin, X } from 'lucide-react';
 import { toast } from 'sonner';
 import CategoryManagement from '@/components/admin/CategoryManagement';
 
@@ -43,11 +43,13 @@ export default function AdminGoogleImport() {
   const [city, setCity] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [maxResults, setMaxResults] = useState('60');
-  const [isImporting, setIsImporting] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [fetchedBusinesses, setFetchedBusinesses] = useState<FetchedBusiness[]>([]);
   const [selectAll, setSelectAll] = useState(true);
 
-  const handleImport = async () => {
+  // Step 1: Fetch businesses from Google Maps
+  const handleFetch = async () => {
     if (!city || !categoryId) {
       toast.error('Please select category and enter city');
       return;
@@ -59,11 +61,10 @@ export default function AdminGoogleImport() {
       return;
     }
 
-    setIsImporting(true);
+    setIsFetching(true);
     setFetchedBusinesses([]);
 
     try {
-      // Fetch from Google Places
       const response = await supabase.functions.invoke('fetch-google-places', {
         body: {
           city,
@@ -77,18 +78,40 @@ export default function AdminGoogleImport() {
         throw new Error(response.error.message || 'Failed to fetch businesses');
       }
 
-      const businesses = response.data.businesses as FetchedBusiness[];
-      toast.success(`Found ${businesses.length} businesses from Google`);
+      const businesses = (response.data.businesses as FetchedBusiness[]).map(b => ({
+        ...b,
+        selected: true,
+      }));
 
-      // Get current user
+      setFetchedBusinesses(businesses);
+      setSelectAll(true);
+      toast.success(`Found ${businesses.length} businesses from Google Maps`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch businesses';
+      toast.error(errorMessage);
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  // Step 2: Publish selected businesses
+  const handlePublish = async () => {
+    const selectedBusinesses = fetchedBusinesses.filter(b => b.selected);
+    if (selectedBusinesses.length === 0) {
+      toast.error('Please select at least one business to publish');
+      return;
+    }
+
+    setIsPublishing(true);
+
+    try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Import all businesses
       let successCount = 0;
-      let errorCount = 0;
+      let duplicateCount = 0;
 
-      for (const business of businesses) {
+      for (const business of selectedBusinesses) {
         try {
           // Check if already exists
           const { data: existing } = await supabase
@@ -96,10 +119,10 @@ export default function AdminGoogleImport() {
             .select('id')
             .eq('name', business.name)
             .eq('city', business.city)
-            .single();
+            .maybeSingle();
 
           if (existing) {
-            errorCount++;
+            duplicateCount++;
             continue;
           }
 
@@ -120,31 +143,36 @@ export default function AdminGoogleImport() {
 
           if (error) {
             console.error('Insert error:', error);
-            errorCount++;
           } else {
             successCount++;
           }
-        } catch {
-          errorCount++;
+        } catch (err) {
+          console.error('Error inserting business:', err);
         }
       }
 
-      toast.success(`Imported ${successCount} businesses${errorCount > 0 ? `, ${errorCount} duplicates/failed` : ''}`);
+      toast.success(
+        `Published ${successCount} businesses` + 
+        (duplicateCount > 0 ? `, ${duplicateCount} duplicates skipped` : '')
+      );
       
-      // Show imported results
-      setFetchedBusinesses(businesses.map(b => ({ ...b, selected: true })));
+      // Clear the list after publishing
+      setFetchedBusinesses([]);
+      setCity('');
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to import businesses';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to publish businesses';
       toast.error(errorMessage);
     } finally {
-      setIsImporting(false);
+      setIsPublishing(false);
     }
   };
 
   const toggleBusiness = (index: number) => {
-    setFetchedBusinesses(prev => 
-      prev.map((b, i) => i === index ? { ...b, selected: !b.selected } : b)
-    );
+    setFetchedBusinesses(prev => {
+      const updated = prev.map((b, i) => i === index ? { ...b, selected: !b.selected } : b);
+      setSelectAll(updated.every(b => b.selected));
+      return updated;
+    });
   };
 
   const toggleSelectAll = () => {
@@ -153,12 +181,18 @@ export default function AdminGoogleImport() {
     setFetchedBusinesses(prev => prev.map(b => ({ ...b, selected: newValue })));
   };
 
+  const clearResults = () => {
+    setFetchedBusinesses([]);
+  };
+
+  const selectedCount = fetchedBusinesses.filter(b => b.selected).length;
+
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Google Places Import</h1>
         <p className="text-muted-foreground">
-          Manage categories and import businesses from Google Maps
+          Fetch businesses from Google Maps, review and publish them
         </p>
       </div>
 
@@ -169,22 +203,22 @@ export default function AdminGoogleImport() {
         </TabsList>
 
         <TabsContent value="import" className="space-y-6">
-          {/* Import Form */}
+          {/* Step 1: Fetch Form */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
-                Import from Google Maps
+                Step 1: Fetch from Google Maps
               </CardTitle>
               <CardDescription>
-                Select category, enter city, and click Import to fetch and add businesses
+                Select category and city, then fetch businesses to review before publishing
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label>Category *</Label>
-                  <Select value={categoryId} onValueChange={setCategoryId}>
+                  <Select value={categoryId} onValueChange={setCategoryId} disabled={fetchedBusinesses.length > 0}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -203,11 +237,12 @@ export default function AdminGoogleImport() {
                     placeholder="e.g., Mumbai, Delhi, Surat"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
+                    disabled={fetchedBusinesses.length > 0}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Max Results</Label>
-                  <Select value={maxResults} onValueChange={setMaxResults}>
+                  <Select value={maxResults} onValueChange={setMaxResults} disabled={fetchedBusinesses.length > 0}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -224,30 +259,51 @@ export default function AdminGoogleImport() {
                 </div>
                 <div className="flex items-end">
                   <Button 
-                    onClick={handleImport} 
-                    disabled={isImporting || !city || !categoryId} 
+                    onClick={handleFetch} 
+                    disabled={isFetching || !city || !categoryId || fetchedBusinesses.length > 0} 
                     className="w-full"
                   >
-                    {isImporting ? (
+                    {isFetching ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     ) : (
-                      <Upload className="h-4 w-4 mr-2" />
+                      <Search className="h-4 w-4 mr-2" />
                     )}
-                    Import
+                    Fetch Businesses
                   </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Results */}
+          {/* Step 2: Review and Publish */}
           {fetchedBusinesses.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Imported Businesses</CardTitle>
-                <CardDescription>
-                  {fetchedBusinesses.length} businesses were processed
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Step 2: Review & Publish</CardTitle>
+                    <CardDescription>
+                      {selectedCount} of {fetchedBusinesses.length} businesses selected
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={clearResults}>
+                      <X className="h-4 w-4 mr-2" />
+                      Clear
+                    </Button>
+                    <Button 
+                      onClick={handlePublish} 
+                      disabled={isPublishing || selectedCount === 0}
+                    >
+                      {isPublishing ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4 mr-2" />
+                      )}
+                      Publish Selected ({selectedCount})
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="rounded-lg border overflow-auto max-h-[500px]">
