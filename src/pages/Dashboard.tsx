@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMyBusinesses, useDeleteBusiness } from '@/hooks/useBusinesses';
+import { TransferBusinessDialog } from '@/components/business/TransferBusinessDialog';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/business/StatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -129,10 +130,10 @@ export default function Dashboard() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                   {business.status === 'approved' && (
                     <Button variant="outline" size="sm" asChild>
-                      <Link to={`/business/${business.id}`}>
+                      <Link to={`/business/${business.slug || business.id}`}>
                         <Eye className="h-4 w-4" />
                       </Link>
                     </Button>
@@ -142,6 +143,10 @@ export default function Dashboard() {
                       <Edit className="h-4 w-4" />
                     </Link>
                   </Button>
+                  <TransferBusinessDialog 
+                    businessId={business.id} 
+                    businessName={business.name} 
+                  />
                   <Button 
                     variant="outline" 
                     size="sm"
