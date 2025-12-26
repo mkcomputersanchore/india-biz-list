@@ -112,7 +112,7 @@ export default function Auth() {
             <Link to="/" className="flex items-center justify-center gap-2 mb-4">
               <Building2 className="h-8 w-8 text-primary" />
               <span className="font-display text-xl font-bold">
-                {settings?.app_name || 'LocalBiz India'}
+                {settings?.app_name || 'Near India'}
               </span>
             </Link>
             <CardTitle className="font-display text-2xl">

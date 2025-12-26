@@ -2,7 +2,7 @@ import { Layout } from '@/components/layout/Layout';
 import { CategoryCard } from '@/components/business/CategoryCard';
 import { useCategories } from '@/hooks/useCategories';
 import { usePlatform } from '@/contexts/PlatformContext';
-import { SEO, generateBreadcrumbSchema } from '@/components/SEO';
+import { SEO, generateBreadcrumbSchema, BRAND } from '@/components/SEO';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Grid3X3 } from 'lucide-react';
 
@@ -10,8 +10,8 @@ export default function Categories() {
   const { data: categories, isLoading } = useCategories();
   const { settings } = usePlatform();
 
-  const appName = settings?.app_name || 'LocalBiz India';
-  const siteUrl = window.location.origin;
+  const appName = settings?.app_name || BRAND.name;
+  const siteUrl = BRAND.url;
 
   const breadcrumbs = [
     { name: 'Home', url: siteUrl },

@@ -1,11 +1,11 @@
 import { Layout } from '@/components/layout/Layout';
 import { usePlatform } from '@/contexts/PlatformContext';
-import { SEO } from '@/components/SEO';
+import { SEO, BRAND } from '@/components/SEO';
 
 export default function Terms() {
   const { settings } = usePlatform();
-  const appName = settings?.app_name || 'LocalBiz India';
-  const siteUrl = window.location.origin;
+  const appName = settings?.app_name || BRAND.name;
+  const siteUrl = BRAND.url;
 
   const schema = {
     '@context': 'https://schema.org',

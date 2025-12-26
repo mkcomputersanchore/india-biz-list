@@ -22,7 +22,7 @@ export function Footer() {
                 <Building2 className="h-8 w-8" />
               )}
               <span className="font-display text-xl font-bold">
-                {settings?.app_name || 'LocalBiz India'}
+                {settings?.app_name || 'Near India'}
               </span>
             </Link>
             <p className="text-background/70 max-w-md">
@@ -116,7 +116,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-background/20 mt-8 pt-8 text-center text-background/50 text-sm">
-          <p>© {new Date().getFullYear()} {settings?.app_name || 'LocalBiz India'}. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {settings?.app_name || 'Near India'}. All rights reserved.</p>
         </div>
       </div>
     </footer>

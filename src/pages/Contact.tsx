@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Layout } from '@/components/layout/Layout';
 import { usePlatform } from '@/contexts/PlatformContext';
-import { SEO } from '@/components/SEO';
+import { SEO, BRAND } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,8 +32,8 @@ export default function Contact() {
   const { settings } = usePlatform();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const appName = settings?.app_name || 'LocalBiz India';
-  const siteUrl = window.location.origin;
+  const appName = settings?.app_name || BRAND.name;
+  const siteUrl = BRAND.url;
 
   const schema = {
     '@context': 'https://schema.org',
