@@ -1,12 +1,35 @@
 import { Layout } from '@/components/layout/Layout';
 import { usePlatform } from '@/contexts/PlatformContext';
+import { SEO } from '@/components/SEO';
 
 export default function Terms() {
   const { settings } = usePlatform();
   const appName = settings?.app_name || 'LocalBiz India';
+  const siteUrl = window.location.origin;
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: `Terms of Service - ${appName}`,
+    description: `Terms of service for ${appName}. Understand the rules and guidelines for using our business directory platform.`,
+    url: `${siteUrl}/terms`,
+    mainEntity: {
+      '@type': 'WebContent',
+      about: {
+        '@type': 'Thing',
+        name: 'Terms of Service',
+      },
+    },
+  };
 
   return (
     <Layout>
+      <SEO
+        title={`Terms of Service - ${appName}`}
+        description={`Terms of service for ${appName}. Understand the rules and guidelines for using our business directory platform.`}
+        canonicalUrl={`${siteUrl}/terms`}
+        schema={schema}
+      />
       {/* Hero Section */}
       <section className="bg-gradient-hero py-16">
         <div className="container-wide text-center">

@@ -3,11 +3,13 @@ import { Layout } from '@/components/layout/Layout';
 import { useBusiness } from '@/hooks/useBusinesses';
 import { useGoogleMapsKey } from '@/hooks/useGoogleMapsKey';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePlatform } from '@/contexts/PlatformContext';
 import { ClaimBusinessDialog } from '@/components/business/ClaimBusinessDialog';
 import { BusinessHours } from '@/components/business/BusinessHours';
 import { BusinessTags } from '@/components/business/BusinessTags';
 import { ShareBusiness } from '@/components/business/ShareBusiness';
 import { GoogleMap } from '@/components/business/GoogleMap';
+import { SEO, generateLocalBusinessSchema, generateBreadcrumbSchema } from '@/components/SEO';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,6 +47,7 @@ export default function BusinessDetail() {
   const { data: business, isLoading, error } = useBusiness(slug || '');
   const { data: mapsApiKey } = useGoogleMapsKey();
   const { user, isAdmin } = useAuth();
+  const { settings } = usePlatform();
 
   if (isLoading) {
     return (
@@ -131,8 +134,38 @@ export default function BusinessDetail() {
     return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
+  const appName = settings?.app_name || 'LocalBiz India';
+  const siteUrl = window.location.origin;
+  
+  const pageTitle = `${business.name} - ${business.city}, ${business.state} | ${appName}`;
+  const pageDescription = business.short_description || business.description 
+    ? (business.short_description || business.description || '').substring(0, 155) + '...'
+    : `${business.name} in ${business.city}, ${business.state}. Contact details, hours, location and more on ${appName}.`;
+  
+  const canonicalUrl = `${siteUrl}/business/${business.slug}/`;
+  
+  const breadcrumbs = [
+    { name: 'Home', url: siteUrl },
+    { name: 'Businesses', url: `${siteUrl}/businesses/` },
+    ...(business.category ? [{ name: business.category.name, url: `${siteUrl}/businesses/${business.category.slug || ''}/` }] : []),
+    { name: business.name, url: canonicalUrl },
+  ];
+
+  const schema = [
+    generateLocalBusinessSchema(business),
+    generateBreadcrumbSchema(breadcrumbs),
+  ];
+
   return (
     <Layout>
+      <SEO
+        title={pageTitle}
+        description={pageDescription}
+        canonicalUrl={canonicalUrl}
+        type="business.business"
+        image={primaryImage?.image_url || business.logo_url || undefined}
+        schema={schema}
+      />
       <div className="min-h-screen bg-muted/30">
         <div className="container max-w-6xl mx-auto px-4 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
