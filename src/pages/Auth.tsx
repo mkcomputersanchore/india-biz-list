@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -150,25 +151,27 @@ export default function Auth() {
         return;
       }
       
-      // Credentials valid - now sign out and send OTP for 2FA
-      // We need to sign out first because signIn succeeded
-      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/logout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-      }).catch(() => {});
+      // Credentials valid - now sign out properly and send OTP for 2FA
+      await supabase.auth.signOut();
       
       // Send OTP
       const { error: otpError } = await sendLoginOtp(email);
       
       if (otpError) {
-        toast({
-          title: 'Error',
-          description: 'Could not send OTP. Please try again.',
-          variant: 'destructive',
-        });
+        // Check if it's a rate limit error
+        if (otpError.message.includes('security purposes') || otpError.message.includes('rate')) {
+          toast({
+            title: 'Please Wait',
+            description: 'Too many requests. Please wait a moment and try again.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: 'Could not send OTP. Please try again.',
+            variant: 'destructive',
+          });
+        }
       } else {
         toast({
           title: 'OTP Sent!',
