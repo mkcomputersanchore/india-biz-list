@@ -1,0 +1,2 @@
+# Redirect sitemap.xml to edge function
+/sitemap.xml https://dovwynkusvmwjfykkmmw.supabase.co/functions/v1/sitemap 200

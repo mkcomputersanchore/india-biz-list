@@ -156,7 +156,7 @@ export function Footer() {
               Disclaimer
             </Link>
             <a 
-              href="https://dovwynkusvmwjfykkmmw.supabase.co/functions/v1/sitemap" 
+              href="/sitemap.xml" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="text-slate-400 hover:text-white transition-colors text-sm"
