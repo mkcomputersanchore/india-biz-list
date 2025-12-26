@@ -1,36 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 export default function Sitemap() {
-  const [xmlContent, setXmlContent] = useState<string | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    const fetchSitemap = async () => {
+    const fetchAndRender = async () => {
       try {
-        const response = await fetch('https://dovwynkusvmwjfykkmmw.supabase.co/functions/v1/sitemap');
-        const content = await response.text();
-        setXmlContent(content);
+        const response = await fetch(
+          "https://dovwynkusvmwjfykkmmw.supabase.co/functions/v1/sitemap",
+          {
+            headers: {
+              Accept: "application/xml,text/xml,*/*",
+            },
+          }
+        );
+
+        if (!response.ok) throw new Error(`Failed to fetch sitemap: ${response.status}`);
+
+        const xml = await response.text();
+        const normalizedXml = xml.trimStart().startsWith("<?xml")
+          ? xml
+          : `<?xml version="1.0" encoding="UTF-8"?>\n${xml}`;
+
+        // Render directly at /sitemap.xml (keeps the same URL; no blob/data redirects)
+        document.open("application/xml");
+        document.write(normalizedXml);
+        document.close();
       } catch (err) {
-        console.error('Error fetching sitemap:', err);
+        console.error("Error fetching sitemap:", err);
         setError(true);
       }
     };
 
-    fetchSitemap();
+    fetchAndRender();
   }, []);
-
-  useEffect(() => {
-    if (xmlContent) {
-      // Create a blob with XML content type and redirect to it
-      const blob = new Blob([xmlContent], { type: 'application/xml' });
-      const url = URL.createObjectURL(blob);
-      window.location.replace(url);
-    }
-  }, [xmlContent]);
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <p className="text-destructive">Error loading sitemap</p>
       </div>
     );
