@@ -12,7 +12,8 @@ import {
   Flag,
   MapPin,
   FolderOpen,
-  Sparkles
+  Sparkles,
+  Mail
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,7 @@ const navItems = [
   { path: '/admin/amenities', label: 'Amenities', icon: Sparkles },
   { path: '/admin/claims', label: 'Claims', icon: Flag },
   { path: '/admin/users', label: 'Users', icon: Users },
+  { path: '/admin/contact-submissions', label: 'Messages', icon: Mail },
   { path: '/admin/google-import', label: 'Google Import', icon: MapPin },
   { path: '/admin/settings', label: 'Settings', icon: Settings },
 ];

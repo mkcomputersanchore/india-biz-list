@@ -36,7 +36,9 @@ export default function AdminSettings() {
   const { settings, isLoading } = usePlatform();
   const updateSettings = useUpdatePlatformSettings();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [faviconUrl, setFaviconUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
 
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
@@ -61,8 +63,61 @@ export default function AdminSettings() {
         seo_description: settings.seo_description || '',
       });
       setLogoUrl(settings.logo_url);
+      setFaviconUrl(settings.favicon_url);
     }
   }, [settings, form]);
+
+  const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingFavicon(true);
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `favicon-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('platform-assets')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('platform-assets')
+        .getPublicUrl(fileName);
+
+      setFaviconUrl(publicUrl);
+      
+      await updateSettings.mutateAsync({ favicon_url: publicUrl });
+      
+      // Update the favicon in the browser
+      const faviconLink = document.getElementById('dynamic-favicon') as HTMLLinkElement;
+      if (faviconLink) {
+        faviconLink.href = publicUrl;
+      }
+      
+      toast.success('Favicon uploaded successfully');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to upload favicon');
+    } finally {
+      setUploadingFavicon(false);
+    }
+  };
+
+  const removeFavicon = async () => {
+    try {
+      await updateSettings.mutateAsync({ favicon_url: null });
+      setFaviconUrl(null);
+      const faviconLink = document.getElementById('dynamic-favicon') as HTMLLinkElement;
+      if (faviconLink) {
+        faviconLink.href = '/favicon.ico';
+      }
+      toast.success('Favicon removed');
+    } catch (error) {
+      toast.error('Failed to remove favicon');
+    }
+  };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -186,6 +241,47 @@ export default function AdminSettings() {
                       onChange={handleLogoUpload}
                       className="hidden"
                       disabled={uploading}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {/* Favicon */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Favicon</label>
+              <p className="text-xs text-muted-foreground mb-2">
+                The small icon shown in browser tabs (recommended: 32x32 or 64x64 px)
+              </p>
+              <div className="flex items-center gap-4">
+                {faviconUrl ? (
+                  <div className="relative">
+                    <img
+                      src={faviconUrl}
+                      alt="Favicon"
+                      className="h-12 w-12 rounded border object-contain"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeFavicon}
+                      className="absolute -top-2 -right-2 p-1 rounded-full bg-destructive text-destructive-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="h-12 w-12 rounded-lg border-2 border-dashed flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors">
+                    {uploadingFavicon ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Upload className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*,.ico"
+                      onChange={handleFaviconUpload}
+                      className="hidden"
+                      disabled={uploadingFavicon}
                     />
                   </label>
                 )}

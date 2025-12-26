@@ -35,6 +35,16 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
     fetchSettings();
   }, []);
 
+  // Update favicon dynamically when settings change
+  useEffect(() => {
+    if (settings?.favicon_url) {
+      const faviconLink = document.getElementById('dynamic-favicon') as HTMLLinkElement;
+      if (faviconLink) {
+        faviconLink.href = settings.favicon_url;
+      }
+    }
+  }, [settings?.favicon_url]);
+
   const value = {
     settings,
     isLoading,
