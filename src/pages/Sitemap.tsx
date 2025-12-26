@@ -6,12 +6,15 @@ export default function Sitemap() {
   useEffect(() => {
     const fetchAndRender = async () => {
       try {
+        // Add cache-busting timestamp
+        const timestamp = Date.now();
         const response = await fetch(
-          "https://dovwynkusvmwjfykkmmw.supabase.co/functions/v1/sitemap",
+          `https://dovwynkusvmwjfykkmmw.supabase.co/functions/v1/sitemap?t=${timestamp}`,
           {
             headers: {
               Accept: "application/xml,text/xml,*/*",
             },
+            cache: "no-store",
           }
         );
 
@@ -22,7 +25,7 @@ export default function Sitemap() {
           ? xml
           : `<?xml version="1.0" encoding="UTF-8"?>\n${xml}`;
 
-        // Render directly at /sitemap.xml (keeps the same URL; no blob/data redirects)
+        // Render directly at /sitemap.xml
         document.open("application/xml");
         document.write(normalizedXml);
         document.close();
