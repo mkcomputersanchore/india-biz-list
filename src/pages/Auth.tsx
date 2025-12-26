@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { usePlatform } from '@/contexts/PlatformContext';
@@ -14,6 +13,11 @@ import { z } from 'zod';
 
 const emailSchema = z.object({
   email: z.string().trim().email('Invalid email address'),
+});
+
+const loginSchema = z.object({
+  email: z.string().trim().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
 const signupSchema = z.object({
@@ -34,12 +38,12 @@ const resetPasswordSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type AuthMode = 'login' | 'signup' | 'otp-verify' | 'forgot-password' | 'reset-password';
+type AuthMode = 'login' | 'signup' | 'forgot-password' | 'reset-password';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, signUp, sendLoginOtp, verifyLoginOtp, resetPassword, updatePassword } = useAuth();
+  const { user, signUp, signIn, resetPassword, updatePassword } = useAuth();
   const { toast } = useToast();
   const { settings } = usePlatform();
   
@@ -50,9 +54,7 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [otpCode, setOtpCode] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [previousMode, setPreviousMode] = useState<'login' | 'signup'>('login');
 
   useEffect(() => {
     if (searchParams.get('mode') === 'reset-password') {
@@ -66,137 +68,19 @@ export default function Auth() {
     }
   }, [user, navigate, mode]);
 
-  // Handle login - send OTP to email
   const handleLogin = async () => {
     setErrors({});
     
     try {
-      emailSchema.parse({ email });
+      loginSchema.parse({ email, password });
       setIsLoading(true);
       
-      const { error } = await sendLoginOtp(email);
-      
-      if (error) {
-        if (error.message.includes('security purposes') || error.message.includes('rate')) {
-          toast({
-            title: 'Please Wait',
-            description: 'Too many requests. Please wait a moment and try again.',
-            variant: 'destructive',
-          });
-        } else if (error.message.includes('Signups not allowed')) {
-          toast({
-            title: 'Account Not Found',
-            description: 'No account exists with this email. Please sign up first.',
-            variant: 'destructive',
-          });
-        } else {
-          toast({
-            title: 'Error',
-            description: error.message,
-            variant: 'destructive',
-          });
-        }
-      } else {
-        toast({
-          title: 'OTP Sent!',
-          description: 'Please check your email for the verification code.',
-        });
-        setPreviousMode('login');
-        setMode('otp-verify');
-      }
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const fieldErrors: Record<string, string> = {};
-        error.errors.forEach((err) => {
-          if (err.path[0]) {
-            fieldErrors[err.path[0] as string] = err.message;
-          }
-        });
-        setErrors(fieldErrors);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle signup - create account then send OTP
-  const handleSignup = async () => {
-    setErrors({});
-    
-    try {
-      signupSchema.parse({ email, password, confirmPassword, fullName });
-      setIsLoading(true);
-      
-      // Create the account
-      const { error: signUpError } = await signUp(email, password, fullName);
-      
-      if (signUpError) {
-        if (signUpError.message.includes('already registered')) {
-          toast({
-            title: 'Account Exists',
-            description: 'This email is already registered. Please login instead.',
-            variant: 'destructive',
-          });
-          setMode('login');
-        } else {
-          toast({
-            title: 'Error',
-            description: signUpError.message,
-            variant: 'destructive',
-          });
-        }
-        return;
-      }
-      
-      // Send OTP for verification
-      const { error: otpError } = await sendLoginOtp(email);
-      
-      if (otpError) {
-        toast({
-          title: 'Account Created',
-          description: 'Your account was created. Please check your email for verification.',
-        });
-        setMode('login');
-      } else {
-        toast({
-          title: 'OTP Sent!',
-          description: 'Please check your email for the verification code.',
-        });
-        setPreviousMode('signup');
-        setMode('otp-verify');
-      }
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const fieldErrors: Record<string, string> = {};
-        error.errors.forEach((err) => {
-          if (err.path[0]) {
-            fieldErrors[err.path[0] as string] = err.message;
-          }
-        });
-        setErrors(fieldErrors);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Verify OTP
-  const handleVerifyOtp = async () => {
-    if (otpCode.length !== 6) {
-      setErrors({ otp: 'Please enter a valid 6-digit code' });
-      return;
-    }
-    
-    setIsLoading(true);
-    setErrors({});
-    
-    try {
-      const { error } = await verifyLoginOtp(email, otpCode);
+      const { error } = await signIn(email, password);
       
       if (error) {
         toast({
-          title: 'Invalid Code',
-          description: 'The verification code is incorrect or has expired.',
+          title: 'Error',
+          description: error.message,
           variant: 'destructive',
         });
       } else {
@@ -207,44 +91,64 @@ export default function Auth() {
         navigate('/dashboard');
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Something went wrong. Please try again.',
-        variant: 'destructive',
-      });
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0] as string] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Resend OTP
-  const handleResendOtp = async () => {
-    setIsLoading(true);
+  const handleSignup = async () => {
+    setErrors({});
     
-    const { error } = await sendLoginOtp(email);
-    
-    if (error) {
-      if (error.message.includes('security purposes') || error.message.includes('rate')) {
-        toast({
-          title: 'Please Wait',
-          description: 'Too many requests. Please wait a moment and try again.',
-          variant: 'destructive',
-        });
+    try {
+      signupSchema.parse({ email, password, confirmPassword, fullName });
+      setIsLoading(true);
+      
+      const { error } = await signUp(email, password, fullName);
+      
+      if (error) {
+        if (error.message.includes('already registered')) {
+          toast({
+            title: 'Account Exists',
+            description: 'This email is already registered. Please login instead.',
+            variant: 'destructive',
+          });
+          setMode('login');
+        } else {
+          toast({
+            title: 'Error',
+            description: error.message,
+            variant: 'destructive',
+          });
+        }
       } else {
         toast({
-          title: 'Error',
-          description: 'Could not resend OTP. Please try again.',
-          variant: 'destructive',
+          title: 'Account Created!',
+          description: 'You have been signed up successfully.',
         });
+        navigate('/dashboard');
       }
-    } else {
-      toast({
-        title: 'OTP Sent!',
-        description: 'A new verification code has been sent to your email.',
-      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0] as string] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+      }
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   const handleForgotPassword = async () => {
@@ -323,79 +227,6 @@ export default function Auth() {
 
   const renderContent = () => {
     switch (mode) {
-      case 'otp-verify':
-        return (
-          <>
-            <CardHeader className="text-center">
-              <Link to="/" className="flex items-center justify-center gap-2 mb-4">
-                <Building2 className="h-8 w-8 text-primary" />
-                <span className="font-display text-xl font-bold">
-                  {settings?.app_name || 'Near India'}
-                </span>
-              </Link>
-              <CardTitle className="font-display text-2xl">Verify Your Email</CardTitle>
-              <CardDescription>
-                Enter the 6-digit code sent to {email}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="flex justify-center">
-                  <InputOTP
-                    maxLength={6}
-                    value={otpCode}
-                    onChange={(value) => setOtpCode(value)}
-                    disabled={isLoading}
-                  >
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
-                    </InputOTPGroup>
-                  </InputOTP>
-                </div>
-                {errors.otp && (
-                  <p className="text-sm text-destructive text-center">{errors.otp}</p>
-                )}
-                <Button 
-                  onClick={handleVerifyOtp} 
-                  className="w-full" 
-                  disabled={isLoading || otpCode.length !== 6}
-                >
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Verify & Login
-                </Button>
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    disabled={isLoading}
-                    className="text-sm text-muted-foreground hover:text-primary"
-                  >
-                    Didn't receive the code? Resend
-                  </button>
-                </div>
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode(previousMode);
-                      setOtpCode('');
-                    }}
-                    className="text-sm text-primary hover:underline inline-flex items-center gap-1"
-                  >
-                    <ArrowLeft className="h-3 w-3" />
-                    Back to {previousMode === 'signup' ? 'sign up' : 'login'}
-                  </button>
-                </div>
-              </div>
-            </CardContent>
-          </>
-        );
-
       case 'forgot-password':
         return (
           <>
@@ -620,7 +451,7 @@ export default function Auth() {
               </Link>
               <CardTitle className="font-display text-2xl">Welcome Back</CardTitle>
               <CardDescription>
-                Sign in with your email to continue
+                Sign in to manage your business listings
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -639,6 +470,20 @@ export default function Auth() {
                     <p className="text-sm text-destructive">{errors.email}</p>
                   )}
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                  />
+                  {errors.password && (
+                    <p className="text-sm text-destructive">{errors.password}</p>
+                  )}
+                </div>
                 
                 <Button 
                   onClick={handleLogin} 
@@ -646,7 +491,7 @@ export default function Auth() {
                   disabled={isLoading}
                 >
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Send OTP
+                  Sign In
                 </Button>
 
                 <div className="text-center">
