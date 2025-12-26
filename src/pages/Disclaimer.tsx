@@ -1,12 +1,35 @@
 import { Layout } from '@/components/layout/Layout';
 import { usePlatform } from '@/contexts/PlatformContext';
+import { SEO } from '@/components/SEO';
 
 export default function Disclaimer() {
   const { settings } = usePlatform();
   const appName = settings?.app_name || 'LocalBiz India';
+  const siteUrl = window.location.origin;
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: `Disclaimer - ${appName}`,
+    description: `Disclaimer for ${appName}. Important legal information about using our business directory platform.`,
+    url: `${siteUrl}/disclaimer`,
+    mainEntity: {
+      '@type': 'WebContent',
+      about: {
+        '@type': 'Thing',
+        name: 'Disclaimer',
+      },
+    },
+  };
 
   return (
     <Layout>
+      <SEO
+        title={`Disclaimer - ${appName}`}
+        description={`Disclaimer for ${appName}. Important legal information about using our business directory platform and business listings.`}
+        canonicalUrl={`${siteUrl}/disclaimer`}
+        schema={schema}
+      />
       {/* Hero Section */}
       <section className="bg-gradient-hero py-16">
         <div className="container-wide text-center">

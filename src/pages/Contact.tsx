@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Layout } from '@/components/layout/Layout';
 import { usePlatform } from '@/contexts/PlatformContext';
+import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,6 +32,17 @@ export default function Contact() {
   const { settings } = usePlatform();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const appName = settings?.app_name || 'LocalBiz India';
+  const siteUrl = window.location.origin;
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'ContactPage',
+    name: `Contact ${appName}`,
+    description: `Get in touch with ${appName}. Contact us for questions, feedback, or business inquiries.`,
+    url: `${siteUrl}/contact`,
+  };
+
   const form = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
     defaultValues: {
@@ -52,6 +64,12 @@ export default function Contact() {
 
   return (
     <Layout>
+      <SEO
+        title={`Contact Us - ${appName}`}
+        description={`Get in touch with ${appName}. Contact us for questions, feedback, business inquiries, or support.`}
+        canonicalUrl={`${siteUrl}/contact`}
+        schema={schema}
+      />
       {/* Hero Section */}
       <section className="bg-gradient-hero py-16 md:py-24">
         <div className="container-wide text-center">

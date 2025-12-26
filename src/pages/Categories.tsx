@@ -1,14 +1,42 @@
 import { Layout } from '@/components/layout/Layout';
 import { CategoryCard } from '@/components/business/CategoryCard';
 import { useCategories } from '@/hooks/useCategories';
+import { usePlatform } from '@/contexts/PlatformContext';
+import { SEO, generateBreadcrumbSchema } from '@/components/SEO';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Grid3X3 } from 'lucide-react';
 
 export default function Categories() {
   const { data: categories, isLoading } = useCategories();
+  const { settings } = usePlatform();
+
+  const appName = settings?.app_name || 'LocalBiz India';
+  const siteUrl = window.location.origin;
+
+  const breadcrumbs = [
+    { name: 'Home', url: siteUrl },
+    { name: 'Categories', url: `${siteUrl}/categories` },
+  ];
+
+  const schema = [
+    generateBreadcrumbSchema(breadcrumbs),
+    {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: `Business Categories - ${appName}`,
+      description: `Browse all business categories on ${appName}. Find restaurants, services, shops and more.`,
+      url: `${siteUrl}/categories`,
+    },
+  ];
 
   return (
     <Layout>
+      <SEO
+        title={`Business Categories - ${appName}`}
+        description={`Browse all business categories on ${appName}. Find restaurants, services, retail shops, healthcare providers, and more across India.`}
+        canonicalUrl={`${siteUrl}/categories`}
+        schema={schema}
+      />
       {/* Hero Section */}
       <section className="bg-gradient-hero py-16 md:py-24">
         <div className="container-wide text-center">

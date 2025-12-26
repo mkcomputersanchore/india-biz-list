@@ -1,12 +1,35 @@
 import { Layout } from '@/components/layout/Layout';
 import { usePlatform } from '@/contexts/PlatformContext';
+import { SEO } from '@/components/SEO';
 
 export default function Privacy() {
   const { settings } = usePlatform();
   const appName = settings?.app_name || 'LocalBiz India';
+  const siteUrl = window.location.origin;
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: `Privacy Policy - ${appName}`,
+    description: `Privacy policy for ${appName}. Learn how we collect, use, and protect your personal information.`,
+    url: `${siteUrl}/privacy`,
+    mainEntity: {
+      '@type': 'WebContent',
+      about: {
+        '@type': 'Thing',
+        name: 'Privacy Policy',
+      },
+    },
+  };
 
   return (
     <Layout>
+      <SEO
+        title={`Privacy Policy - ${appName}`}
+        description={`Privacy policy for ${appName}. Learn how we collect, use, and protect your personal information on our business directory platform.`}
+        canonicalUrl={`${siteUrl}/privacy`}
+        schema={schema}
+      />
       {/* Hero Section */}
       <section className="bg-gradient-hero py-16">
         <div className="container-wide text-center">

@@ -4,6 +4,8 @@ import { SearchBar } from '@/components/business/SearchBar';
 import { BusinessCard } from '@/components/business/BusinessCard';
 import { useApprovedBusinesses } from '@/hooks/useBusinesses';
 import { useCategories } from '@/hooks/useCategories';
+import { usePlatform } from '@/contexts/PlatformContext';
+import { SEO, generateItemListSchema, generateBreadcrumbSchema } from '@/components/SEO';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Building2 } from 'lucide-react';
 
@@ -12,6 +14,7 @@ export default function Businesses() {
   const [searchParams] = useSearchParams();
   const search = searchParams.get('search') || '';
   const city = searchParams.get('city') || '';
+  const { settings } = usePlatform();
 
   const { data: categories } = useCategories();
   const selectedCategory = categories?.find(c => c.slug === categorySlug);
@@ -22,8 +25,40 @@ export default function Businesses() {
     city: city || undefined,
   });
 
+  const appName = settings?.app_name || 'LocalBiz India';
+  const siteUrl = window.location.origin;
+  
+  const pageTitle = selectedCategory 
+    ? `${selectedCategory.name} Businesses - ${appName}`
+    : `All Businesses - ${appName}`;
+  
+  const pageDescription = selectedCategory
+    ? `Find the best ${selectedCategory.name.toLowerCase()} businesses in India. Browse verified listings with contact details, hours, and reviews.`
+    : `Discover trusted local businesses across India. Browse our directory of verified businesses with contact details, hours, and reviews.`;
+
+  const canonicalUrl = categorySlug 
+    ? `${siteUrl}/businesses/${categorySlug}/`
+    : `${siteUrl}/businesses/`;
+
+  const breadcrumbs = [
+    { name: 'Home', url: siteUrl },
+    { name: 'Businesses', url: `${siteUrl}/businesses/` },
+    ...(selectedCategory ? [{ name: selectedCategory.name, url: `${siteUrl}/businesses/${categorySlug}/` }] : []),
+  ];
+
+  const schema = [
+    generateBreadcrumbSchema(breadcrumbs),
+    ...(businesses?.length ? [generateItemListSchema(businesses, siteUrl)] : []),
+  ];
+
   return (
     <Layout>
+      <SEO
+        title={pageTitle}
+        description={pageDescription}
+        canonicalUrl={canonicalUrl}
+        schema={schema}
+      />
       {/* Hero Section */}
       <section className="bg-gradient-hero py-12">
         <div className="container-wide">

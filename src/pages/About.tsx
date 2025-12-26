@@ -1,12 +1,29 @@
 import { Layout } from '@/components/layout/Layout';
 import { usePlatform } from '@/contexts/PlatformContext';
+import { SEO } from '@/components/SEO';
 import { Building2, Users, Shield, Target } from 'lucide-react';
 
 export default function About() {
   const { settings } = usePlatform();
+  const appName = settings?.app_name || 'LocalBiz India';
+  const siteUrl = window.location.origin;
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: `About ${appName}`,
+    description: `Learn about ${appName}, India's trusted business directory connecting local businesses with customers.`,
+    url: `${siteUrl}/about`,
+  };
 
   return (
     <Layout>
+      <SEO
+        title={`About Us - ${appName}`}
+        description={`Learn about ${appName}, India's trusted business directory. We connect local businesses with customers, supporting communities across India.`}
+        canonicalUrl={`${siteUrl}/about`}
+        schema={schema}
+      />
       {/* Hero Section */}
       <section className="bg-gradient-hero py-16 md:py-24">
         <div className="container-wide text-center">
