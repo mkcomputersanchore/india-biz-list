@@ -1,34 +1,44 @@
 import { useEffect, useState } from 'react';
 
 export default function Sitemap() {
-  const [loading, setLoading] = useState(true);
+  const [xmlContent, setXmlContent] = useState<string | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    const fetchAndDisplaySitemap = async () => {
+    const fetchSitemap = async () => {
       try {
         const response = await fetch('https://dovwynkusvmwjfykkmmw.supabase.co/functions/v1/sitemap');
-        const xmlContent = await response.text();
-        
-        // Create a new document with the XML content
-        document.open('text/xml');
-        document.write(xmlContent);
-        document.close();
-      } catch (error) {
-        console.error('Error fetching sitemap:', error);
-        setLoading(false);
+        const content = await response.text();
+        setXmlContent(content);
+      } catch (err) {
+        console.error('Error fetching sitemap:', err);
+        setError(true);
       }
     };
 
-    fetchAndDisplaySitemap();
+    fetchSitemap();
   }, []);
 
-  if (loading) {
+  useEffect(() => {
+    if (xmlContent) {
+      // Create a blob with XML content type and redirect to it
+      const blob = new Blob([xmlContent], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      window.location.replace(url);
+    }
+  }, [xmlContent]);
+
+  if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading sitemap...</p>
+        <p className="text-destructive">Error loading sitemap</p>
       </div>
     );
   }
 
-  return null;
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <p className="text-muted-foreground">Loading sitemap...</p>
+    </div>
+  );
 }
