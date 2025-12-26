@@ -12,6 +12,10 @@ interface AuthContextType {
   isLoading: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithOtp: (email: string) => Promise<{ error: Error | null }>;
+  verifyOtp: (email: string, token: string, type: 'signup' | 'magiclink') => Promise<{ error: Error | null }>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -111,6 +115,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error as Error | null };
   };
 
+  const signInWithOtp = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        shouldCreateUser: true,
+      },
+    });
+    
+    return { error: error as Error | null };
+  };
+
+  const verifyOtp = async (email: string, token: string, type: 'signup' | 'magiclink') => {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: type === 'signup' ? 'signup' : 'email',
+    });
+    
+    return { error: error as Error | null };
+  };
+
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth?mode=reset-password`,
+    });
+    
+    return { error: error as Error | null };
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    
+    return { error: error as Error | null };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -128,6 +170,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     signUp,
     signIn,
+    signInWithOtp,
+    verifyOtp,
+    resetPassword,
+    updatePassword,
     signOut,
   };
 
