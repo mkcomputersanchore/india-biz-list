@@ -5,7 +5,7 @@ import { BusinessCard } from '@/components/business/BusinessCard';
 import { useApprovedBusinesses } from '@/hooks/useBusinesses';
 import { useCategories } from '@/hooks/useCategories';
 import { usePlatform } from '@/contexts/PlatformContext';
-import { SEO, generateItemListSchema, generateBreadcrumbSchema } from '@/components/SEO';
+import { SEO, generateItemListSchema, generateBreadcrumbSchema, BRAND } from '@/components/SEO';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Building2 } from 'lucide-react';
 
@@ -25,8 +25,8 @@ export default function Businesses() {
     city: city || undefined,
   });
 
-  const appName = settings?.app_name || 'LocalBiz India';
-  const siteUrl = window.location.origin;
+  const appName = settings?.app_name || BRAND.name;
+  const siteUrl = BRAND.url;
   
   const pageTitle = selectedCategory 
     ? `${selectedCategory.name} Businesses - ${appName}`

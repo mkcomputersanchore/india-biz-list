@@ -9,7 +9,7 @@ import { BusinessHours } from '@/components/business/BusinessHours';
 import { BusinessTags } from '@/components/business/BusinessTags';
 import { ShareBusiness } from '@/components/business/ShareBusiness';
 import { GoogleMap } from '@/components/business/GoogleMap';
-import { SEO, generateLocalBusinessSchema, generateBreadcrumbSchema } from '@/components/SEO';
+import { SEO, generateLocalBusinessSchema, generateBreadcrumbSchema, BRAND } from '@/components/SEO';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -134,8 +134,8 @@ export default function BusinessDetail() {
     return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
-  const appName = settings?.app_name || 'LocalBiz India';
-  const siteUrl = window.location.origin;
+  const appName = settings?.app_name || BRAND.name;
+  const siteUrl = BRAND.url;
   
   const pageTitle = `${business.name} - ${business.city}, ${business.state} | ${appName}`;
   const pageDescription = business.short_description || business.description 

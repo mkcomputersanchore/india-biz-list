@@ -1,12 +1,12 @@
 import { Layout } from '@/components/layout/Layout';
 import { usePlatform } from '@/contexts/PlatformContext';
-import { SEO } from '@/components/SEO';
+import { SEO, BRAND } from '@/components/SEO';
 import { Building2, Users, Shield, Target } from 'lucide-react';
 
 export default function About() {
   const { settings } = usePlatform();
-  const appName = settings?.app_name || 'LocalBiz India';
-  const siteUrl = window.location.origin;
+  const appName = settings?.app_name || BRAND.name;
+  const siteUrl = BRAND.url;
 
   const schema = {
     '@context': 'https://schema.org',
@@ -28,7 +28,7 @@ export default function About() {
       <section className="bg-gradient-hero py-16 md:py-24">
         <div className="container-wide text-center">
           <h1 className="font-display text-4xl md:text-5xl font-bold text-white mb-4">
-            About {settings?.app_name || 'LocalBiz India'}
+            About {settings?.app_name || BRAND.name}
           </h1>
           <p className="text-lg text-white/80 max-w-2xl mx-auto">
             Connecting local businesses with customers across India since 2024
@@ -95,7 +95,7 @@ export default function About() {
             <h2 className="font-display text-3xl font-bold mb-6 text-center">Our Story</h2>
             <div className="prose prose-slate max-w-none">
               <p className="text-muted-foreground leading-relaxed mb-4">
-                {settings?.app_name || 'LocalBiz India'} was founded with a simple idea: make it easier for 
+                {settings?.app_name || BRAND.name} was founded with a simple idea: make it easier for 
                 people to discover and connect with local businesses in their area. In a world dominated 
                 by large corporations, we believe local businesses are the backbone of our communities.
               </p>
@@ -105,9 +105,9 @@ export default function About() {
                 is verified by our team to ensure quality and authenticity.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                Whether you're looking for a restaurant, a service provider, or a retail store, 
-                {settings?.app_name || 'LocalBiz India'} helps you find the best local options. 
-                Join us in supporting local businesses and strengthening our communities.
+              Whether you're looking for a restaurant, a service provider, or a retail store, 
+              {settings?.app_name || BRAND.name} helps you find the best local options. 
+              Join us in supporting local businesses and strengthening our communities.
               </p>
             </div>
           </div>

@@ -37,7 +37,7 @@ export function Header() {
             <Building2 className="h-8 w-8 text-primary" />
           )}
           <span className="font-display text-xl font-bold text-foreground">
-            {settings?.app_name || 'LocalBiz India'}
+            {settings?.app_name || 'Near India'}
           </span>
         </Link>
 

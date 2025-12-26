@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useCategories } from '@/hooks/useCategories';
 import { useApprovedBusinesses } from '@/hooks/useBusinesses';
 import { usePlatform } from '@/contexts/PlatformContext';
-import { SEO, generateWebsiteSchema, generateOrganizationSchema } from '@/components/SEO';
+import { SEO, generateWebsiteSchema, generateOrganizationSchema, BRAND } from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Building2, Users, Shield } from 'lucide-react';
 
@@ -15,8 +15,8 @@ const Index = () => {
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { data: businesses, isLoading: businessesLoading } = useApprovedBusinesses();
 
-  const appName = settings?.app_name || 'LocalBiz India';
-  const siteUrl = window.location.origin;
+  const appName = settings?.app_name || BRAND.name;
+  const siteUrl = BRAND.url;
   const seoDescription = settings?.seo_description || `Discover trusted local businesses across India. Find restaurants, services, shops and more on ${appName}.`;
 
   const schema = [
