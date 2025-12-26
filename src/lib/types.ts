@@ -5,6 +5,7 @@ export interface PlatformSettings {
   id: string;
   app_name: string;
   logo_url: string | null;
+  favicon_url: string | null;
   contact_email: string | null;
   contact_phone: string | null;
   address: string | null;
@@ -12,6 +13,16 @@ export interface PlatformSettings {
   seo_description: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ContactSubmission {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
 }
 
 export interface Profile {

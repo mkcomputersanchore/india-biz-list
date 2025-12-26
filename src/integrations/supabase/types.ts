@@ -438,6 +438,36 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_read: boolean
+          message: string
+          name: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_read?: boolean
+          message: string
+          name: string
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          name?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       indian_states: {
         Row: {
           code: string
@@ -463,6 +493,7 @@ export type Database = {
           contact_email: string | null
           contact_phone: string | null
           created_at: string
+          favicon_url: string | null
           id: string
           logo_url: string | null
           seo_description: string | null
@@ -475,6 +506,7 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          favicon_url?: string | null
           id?: string
           logo_url?: string | null
           seo_description?: string | null
@@ -487,6 +519,7 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          favicon_url?: string | null
           id?: string
           logo_url?: string | null
           seo_description?: string | null
