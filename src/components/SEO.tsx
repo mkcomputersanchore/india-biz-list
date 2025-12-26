@@ -1,5 +1,12 @@
 import { Helmet } from 'react-helmet-async';
 
+// Brand configuration
+export const BRAND = {
+  name: 'Near India',
+  domain: 'nearindia.in',
+  url: 'https://nearindia.in',
+};
+
 interface SEOProps {
   title: string;
   description: string;
@@ -170,13 +177,11 @@ export function generateOrganizationSchema(settings: {
   contact_phone?: string | null;
   address?: string | null;
 }) {
-  const siteUrl = window.location.origin;
-  
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: settings.app_name || 'Business Directory',
-    url: siteUrl,
+    name: settings.app_name || BRAND.name,
+    url: BRAND.url,
     logo: settings.logo_url || undefined,
     contactPoint: settings.contact_email || settings.contact_phone ? {
       '@type': 'ContactPoint',
