@@ -27,6 +27,7 @@ import AdminClaims from "./pages/admin/AdminClaims";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminContactSubmissions from "./pages/admin/AdminContactSubmissions";
 import AdminGoogleImport from "./pages/admin/AdminGoogleImport";
+import AdminFeatured from "./pages/admin/AdminFeatured";
 import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 
@@ -57,8 +58,9 @@ const App = () => (
               <Route path="/dashboard/add" element={<BusinessForm />} />
               <Route path="/dashboard/edit/:id" element={<BusinessForm />} />
               <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<AdminDashboard />} />
+              <Route index element={<AdminDashboard />} />
                 <Route path="businesses" element={<AdminBusinesses />} />
+                <Route path="featured" element={<AdminFeatured />} />
                 <Route path="categories" element={<AdminCategories />} />
                 <Route path="amenities" element={<AdminAmenities />} />
                 <Route path="claims" element={<AdminClaims />} />

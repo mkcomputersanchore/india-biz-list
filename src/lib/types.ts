@@ -134,6 +134,7 @@ export interface Business {
   price_range: PriceRange | null;
   year_established: number | null;
   status: BusinessStatus;
+  is_featured?: boolean;
   rejection_reason: string | null;
   created_at: string;
   updated_at: string;
