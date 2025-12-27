@@ -1,2 +1,5 @@
-# Redirect sitemap.xml to edge function
+# Sitemap XML - proxy directly to edge function (must be before SPA fallback)
 /sitemap.xml https://dovwynkusvmwjfykkmmw.supabase.co/functions/v1/sitemap 200
+
+# SPA fallback - all other routes go to index.html
+/*    /index.html   200
