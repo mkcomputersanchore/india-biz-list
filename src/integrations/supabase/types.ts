@@ -313,6 +313,7 @@ export type Database = {
           google_maps_url: string | null
           id: string
           instagram_url: string | null
+          is_featured: boolean | null
           linkedin_url: string | null
           logo_url: string | null
           name: string
@@ -347,6 +348,7 @@ export type Database = {
           google_maps_url?: string | null
           id?: string
           instagram_url?: string | null
+          is_featured?: boolean | null
           linkedin_url?: string | null
           logo_url?: string | null
           name: string
@@ -381,6 +383,7 @@ export type Database = {
           google_maps_url?: string | null
           id?: string
           instagram_url?: string | null
+          is_featured?: boolean | null
           linkedin_url?: string | null
           logo_url?: string | null
           name?: string
