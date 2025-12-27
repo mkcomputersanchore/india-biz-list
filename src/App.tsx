@@ -17,7 +17,6 @@ import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Disclaimer from "./pages/Disclaimer";
-import Sitemap from "./pages/Sitemap";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminBusinesses from "./pages/admin/AdminBusinesses";
@@ -53,7 +52,6 @@ const App = () => (
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/disclaimer" element={<Disclaimer />} />
-              <Route path="/sitemap.xml" element={<Sitemap />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/dashboard/add" element={<BusinessForm />} />
               <Route path="/dashboard/edit/:id" element={<BusinessForm />} />
